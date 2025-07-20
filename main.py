@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import csv
 import datetime
 import os
@@ -93,23 +93,6 @@ def log_json():
             clean_rows.append(row)
         return jsonify(clean_rows)
 
-@app.route('/stats')
-def show_stats():
-    with open(LOG_FILE, 'r') as f:
-        reader = csv.DictReader(f)
-        total = bot = human = 0
-        for row in reader:
-            total += 1
-            if row['visitor_type'] == 'bot':
-                bot += 1
-            else:
-                human += 1
-    return jsonify({
-        "total_visits": total,
-        "bots": bot,
-        "humans": human
-    })
-
 @app.route('/clear', methods=['GET'])
 def clear_log():
     with open(LOG_FILE, 'w', newline='') as f:
@@ -122,7 +105,11 @@ def robots_txt():
     return app.send_static_file('robots.txt')
 
 @app.route('/')
-def home():
+def homepage():
+    return render_template('index.html')
+
+@app.route('/demo')
+def demo():
     visitor_type = log_request(request)
     if visitor_type == 'bot':
         return 'Access denied.', 403
