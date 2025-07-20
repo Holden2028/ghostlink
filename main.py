@@ -12,6 +12,13 @@ BOT_KEYWORDS = [
     'requests', 'httpx', 'go-http-client'
 ]
 
+@app.before_request
+def block_known_bots():
+    user_agent = request.headers.get('User-Agent', '').lower()
+    for keyword in BOT_KEYWORDS:
+        if keyword in user_agent:
+            return "Access denied", 403
+
 def initialize_log():
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'w', newline='') as f:
@@ -93,6 +100,13 @@ def clear_log():
 @app.route('/robots.txt')
 def robots_txt():
     return app.send_static_file('robots.txt')
+
+@app.route('/')
+def home():
+    visitor_type = log_request(request)
+    if visitor_type == 'bot':
+        return 'Access denied.', 403
+    return 'Hello, human!', 200
 
 if __name__ == '__main__':
     initialize_log()
