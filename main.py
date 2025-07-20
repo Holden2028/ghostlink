@@ -17,6 +17,14 @@ def block_known_bots():
     user_agent = request.headers.get('User-Agent', '').lower()
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
+            timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            flag = keyword
+
+            with open(LOG_FILE, 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([timestamp, ip, user_agent, 'bot (denied)', flag])
+
             return "Access denied", 403
 
 def initialize_log():
