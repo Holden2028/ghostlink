@@ -57,10 +57,27 @@ def show_log():
     with open(LOG_FILE, 'r') as f:
         rows = list(csv.reader(f))
 
-    html = """<html><head><title>Visitor Log</title></head><body><h1>Visitor Log</h1><table border='1'>"""
+    html = """<html><head><title>Visitor Log</title>
+    <style>
+        .human { background-color: #d4edda; }       /* green */
+        .bot { background-color: #f8d7da; }         /* red */
+        .denied { background-color: #f5c6cb; }      /* darker red */
+        table { border-collapse: collapse; }
+        td, th { padding: 8px; border: 1px solid #ccc; }
+    </style></head><body><h1>Visitor Log</h1><table>
+    """
+
     html += '<tr>' + ''.join(f'<th>{col}</th>' for col in rows[0]) + '</tr>'
     for row in rows[1:]:
-        html += '<tr>' + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>'
+        visitor_type = row[3].lower()
+        if 'denied' in visitor_type:
+            css_class = 'denied'
+        elif visitor_type == 'bot':
+            css_class = 'bot'
+        else:
+            css_class = 'human'
+        html += f"<tr class='{css_class}'>" + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>'
+
     html += '</table></body></html>'
     return html
 
