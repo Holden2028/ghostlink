@@ -115,6 +115,30 @@ def demo():
         return 'Access denied.', 403
     return 'Hello, human!', 200
 
+@app.route('/track', methods=['POST'])
+def track_visit():
+    data = request.get_json()
+    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    user_agent = data.get('user_agent', 'unknown')
+    url = data.get('url', 'unknown')
+    referrer = data.get('referrer', '')
+    flag = ''
+    visitor_type = 'human'
+
+    for keyword in BOT_KEYWORDS:
+        if keyword in user_agent.lower():
+            visitor_type = 'bot'
+            flag = keyword
+            break
+
+    with open(LOG_FILE, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([timestamp, ip, user_agent, visitor_type, flag])
+
+    return jsonify({'status': 'logged'}), 200
+
+
 if __name__ == '__main__':
     initialize_log()
     import os
