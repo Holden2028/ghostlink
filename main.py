@@ -16,7 +16,7 @@ def initialize_log():
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'ip', 'user_agent', 'visitor_type', 'flag'])
+            writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag'])
 
 def classify_visitor(user_agent):
     ua = user_agent.lower()
@@ -82,6 +82,13 @@ def show_stats():
         "bots": bot,
         "humans": human
     })
+
+@app.route('/clear', methods=['GET'])
+def clear_log():
+    with open(LOG_FILE, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag'])
+    return 'Log cleared.', 200
 
 if __name__ == '__main__':
     initialize_log()
