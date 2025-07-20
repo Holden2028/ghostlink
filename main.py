@@ -44,11 +44,6 @@ def log_request(req):
 
     return visitor_type
 
-@app.route('/')
-def home():
-    visitor_type = log_request(request)
-    return ('Your visit has been logged as a bot.', 200) if visitor_type == 'bot' else ('Hello, human!', 200)
-
 @app.route('/log')
 def show_log():
     with open(LOG_FILE, 'r') as f:
