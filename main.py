@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 import csv
 import datetime
 import os
@@ -98,7 +98,8 @@ def robots_txt():
         writer = csv.writer(f)
         writer.writerow([timestamp, ip, user_agent, visitor_type, flag or 'robots.txt'])
 
-    return app.send_static_file('robots.txt')
+    return send_file('robots.txt')
+
 
 @app.route('/')
 def homepage():
