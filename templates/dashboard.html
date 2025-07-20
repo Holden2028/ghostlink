@@ -41,11 +41,11 @@
     </select>
 </nav>
     <h1>Visitor Log Dashboard</h1>
-<form action="/clear" method="get" style="margin-bottom: 1rem;">
-    <button type="submit" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
-        Clear Log
-    </button>
-</form>
+
+<button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
+    Clear Log
+</button>
+<p id="clear-status" style="margin-top:10px; color:#94a3b8;"></p>
 
     <table>
         <thead>
@@ -65,5 +65,22 @@
             {% endfor %}
         </tbody>
     </table>
+<script>
+document.getElementById('clear-log-button').addEventListener('click', function () {
+    fetch('/clear')
+        .then(response => {
+            if (response.ok) {
+                document.getElementById('clear-status').textContent = 'Log cleared successfully.';
+                location.reload(); // refresh the page to update the log table
+            } else {
+                document.getElementById('clear-status').textContent = 'Failed to clear log.';
+            }
+        })
+        .catch(() => {
+            document.getElementById('clear-status').textContent = 'Error while clearing log.';
+        });
+});
+</script>
+
 </body>
 </html>
