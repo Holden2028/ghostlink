@@ -108,13 +108,6 @@ def robots_txt():
 def homepage():
     return render_template('index.html')
 
-@app.route('/demo')
-def demo():
-    visitor_type = log_request(request)
-    if visitor_type == 'bot':
-        return 'Access denied.', 403
-    return 'Hello, human!', 200
-
 @app.route('/track', methods=['POST'])
 def track_visit():
     data = request.get_json()
