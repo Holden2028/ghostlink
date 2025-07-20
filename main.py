@@ -7,7 +7,7 @@ app = Flask(__name__)
 LOG_FILE = 'log.csv'
 
 BOT_KEYWORDS = [
-    'bot', 'crawler', 'spider', 'crawl', 'slurp', 'ai', 'Go-http-client'
+    'bot', 'crawler', 'spider', 'crawl', 'slurp',
     'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'openai'
 ]
 
