@@ -8,7 +8,7 @@ LOG_FILE = 'log.csv'
 
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
-    'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'ai',
+    'google', 'bing', 'scrape', 'yandex', 'duckduckgo', 'gpt', 'ai',
     'requests', 'httpx', 'go-http-client'
 ]
 
@@ -16,22 +16,24 @@ def initialize_log():
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'ip', 'user_agent', 'visitor_type'])
+            writer.writerow(['timestamp', 'ip', 'user_agent', 'visitor_type', 'flag'])
 
 def classify_visitor(user_agent):
     ua = user_agent.lower()
-    return 'bot' if any(keyword in ua for keyword in BOT_KEYWORDS) else 'human'
+    for keyword in BOT_KEYWORDS:
+        if keyword in ua:
+            return 'bot', keyword
+    return 'human', ''
 
 def log_request(req):
-    # Format: Month Day, Year Hour:Minute AM/PM
-    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M %p')
+    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
     ip = request.headers.get('X-Forwarded-For', req.remote_addr)
     user_agent = req.headers.get('User-Agent', 'unknown')
-    visitor_type = classify_visitor(user_agent)
+    visitor_type, flag = classify_visitor(user_agent)
 
     with open(LOG_FILE, 'a', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type])
+        writer.writerow([timestamp, ip, user_agent, visitor_type, flag])
 
     return visitor_type
 
