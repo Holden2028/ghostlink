@@ -8,7 +8,8 @@ LOG_FILE = 'log.csv'
 
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
-    'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'openai'
+    'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'openai',
+    'requests', 'httpx', 'go-http-client'
 ]
 
 def initialize_log():
@@ -85,21 +86,3 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
-
-'''
-------RECORDS------
-LOG
-http://127.0.0.1:5000/log
-JSON
-http://127.0.0.1:5000/log.json
-STATS
-http://127.0.0.1:5000/stats
-
-------TESTS------
-HUMAN
-http://127.0.0.1:5000/
-BINGBOT
-curl -A "Bingbot" http://127.0.0.1:5000/
-GOOGLEBOT
-curl -A "Googlebot/2.1 (+http://www.google.com/bot.html)" http://127.0.0.1:5000/
-'''
