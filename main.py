@@ -90,6 +90,10 @@ def clear_log():
         writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag'])
     return 'Log cleared.', 200
 
+@app.route('/robots.txt')
+def robots_txt():
+    return app.send_static_file('robots.txt')
+
 if __name__ == '__main__':
     initialize_log()
     import os
