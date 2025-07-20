@@ -8,7 +8,7 @@ LOG_FILE = 'log.csv'
 
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
-    'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'openai',
+    'google', 'bing', 'baidu', 'yandex', 'duckduckgo', 'gpt', 'ai',
     'requests', 'httpx', 'go-http-client'
 ]
 
@@ -24,7 +24,7 @@ def classify_visitor(user_agent):
 
 def log_request(req):
     timestamp = datetime.datetime.now().isoformat()
-    ip = req.remote_addr
+    ip = req.headers.get('X-Forwarded-For', req.remote_addr).split(',')[0].strip()
     user_agent = req.headers.get('User-Agent', 'unknown')
     path = req.path
     visitor_type = classify_visitor(user_agent)
