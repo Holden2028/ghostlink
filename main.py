@@ -16,22 +16,22 @@ def initialize_log():
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'ip', 'user_agent', 'visitor_type', 'path'])
+            writer.writerow(['timestamp', 'ip', 'user_agent', 'visitor_type'])
 
 def classify_visitor(user_agent):
     ua = user_agent.lower()
     return 'bot' if any(keyword in ua for keyword in BOT_KEYWORDS) else 'human'
 
 def log_request(req):
-    timestamp = datetime.datetime.now().isoformat()
-    ip = req.headers.get('X-Forwarded-For', req.remote_addr).split(',')[0].strip()
+    # Format: Month Day, Year Hour:Minute AM/PM
+    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M %p')
+    ip = request.headers.get('X-Forwarded-For', req.remote_addr)
     user_agent = req.headers.get('User-Agent', 'unknown')
-    path = req.path
     visitor_type = classify_visitor(user_agent)
 
     with open(LOG_FILE, 'a', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type, path])
+        writer.writerow([timestamp, ip, user_agent, visitor_type])
 
     return visitor_type
 
