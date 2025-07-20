@@ -131,6 +131,13 @@ def track_visit():
 
     return jsonify({'status': 'logged'}), 200
 
+@app.route('/dashboard')
+def dashboard():
+    with open(LOG_FILE, 'r') as f:
+        reader = list(csv.reader(f))
+        columns = reader[0]
+        rows = reader[1:]
+    return render_template('dashboard.html', columns=columns, rows=rows)
 
 if __name__ == '__main__':
     initialize_log()

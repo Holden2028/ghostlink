@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GhostLink Dashboard</title>
+    <style>
+        body {
+            background-color: #0f1115;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 2rem;
+        }
+
+        h1 {
+            color: #3b82f6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid #334155;
+            text-align: left;
+        }
+
+        .human { background-color: #1a2e1f; }
+        .bot { background-color: #3f1e1e; }
+        .denied { background-color: #5a1e1e; }
+    </style>
+</head>
+<body>
+    <h1>Visitor Log Dashboard</h1>
+    <table>
+        <thead>
+            <tr>
+                {% for col in columns %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr class="{{ row[3]|lower }}">
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
