@@ -88,6 +88,16 @@ def clear_log():
 
 @app.route('/robots.txt')
 def robots_txt():
+    # Log bot checking robots.txt
+    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', 'unknown')
+    visitor_type, flag = classify_visitor(user_agent)
+
+    with open(LOG_FILE, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([timestamp, ip, user_agent, visitor_type, flag or 'robots.txt'])
+
     return app.send_static_file('robots.txt')
 
 @app.route('/')
