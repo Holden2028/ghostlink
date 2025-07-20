@@ -52,20 +52,6 @@ def log_request(req):
 
     return visitor_type
 
-@app.route('/log')
-def show_log():
-    with open(LOG_FILE, 'r') as f:
-        rows = list(csv.reader(f))
-
-    html = """<html><head><title>Visitor Log</title>
-    <style>
-        .human { background-color: #d4edda; }       /* green */
-        .bot { background-color: #f8d7da; }         /* red */
-        .denied { background-color: #f5c6cb; }      /* darker red */
-        table { border-collapse: collapse; }
-        td, th { padding: 8px; border: 1px solid #ccc; }
-    </style></head><body><h1>Visitor Log</h1><table>
-    """
 
     html += '<tr>' + ''.join(f'<th>{col}</th>' for col in rows[0]) + '</tr>'
     for row in rows[1:]:
