@@ -4,8 +4,10 @@ import datetime
 import threading
 import sqlite3
 from flask import Flask, request, jsonify, render_template, session, url_for
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = os.environ.get("SECRET_KEY", "changeme")
 DB_FILE = 'visitlog.db'
 RATE_LIMIT = 20
