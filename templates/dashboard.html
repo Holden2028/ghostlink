@@ -1,99 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>GhostLink Dashboard</title>
-    <style>
-        body {
-            background-color: #0f1115;
-            color: #f1f5f9;
-            font-family: 'Segoe UI', sans-serif;
-            padding: 2rem;
-        }
-
-        h1 {
-            color: #3b82f6;
-        }
-
-        h3 {
-            color: #e2e8f0;
-            margin-top: 1.5rem;
-        }
-
-        p, li {
-            color: #cbd5e1;
-            line-height: 1.6;
-        }
-
-        ul {
-            margin-left: 1.5rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-        }
-
-        th, td {
-            padding: 0.75rem;
-            border: 1px solid #334155;
-            text-align: left;
-        }
-
-        .human { background-color: #1a2e1f; }
-        .bot { background-color: #3f1e1e; }
-        .denied { background-color: #5a1e1e; }
-    </style>
-</head>
-<body>
-<nav style="position: absolute; top: 1rem; left: 1rem;">
-    <select onchange="location = this.value;" style="padding: 0.5rem; font-size: 1rem;">
-        <option selected disabled>Menu</option>
-        <option value="/">Home</option>
-        <option value="/dashboard">Dashboard</option>
-    </select>
-</nav>
-
-<h1>Visitor Log Dashboard</h1>
-
-<div style="margin-top: 1rem; margin-bottom: 2rem;">
-    <h3>Current GhostLink Bot Detection</h3>
-<p>
-GhostLink currently protects your site with layered, real-time bot detection. All site visits are logged with the visitor’s IP, user agent, timestamp, and classification as human or bot. Any visit identified as a bot is instantly denied access and logged for review.
-</p>
-<ul>
-    <li><strong>User-Agent keyword matching</strong> (flags and blocks bots like GPTBot, Claude, curl, requests, and common scraping tools)</li>
-    <li><strong>Suspicious header detection</strong> (blocks requests missing typical browser headers)</li>
-    <li><strong>Rate limiting</strong> (blocks IPs sending too many requests per minute)</li>
-    <li><strong>Honeypot traps</strong> (hidden links that only bots will follow)</li>
-    <li><strong>No-JavaScript detection</strong> (blocks visitors who do not run required frontend JS)</li>
-    <li><strong>Session/cookie checks</strong> (blocks non-browser clients missing session data)</li>
-    <li><strong>All denied bots are logged with detailed reason</strong></li>
-</ul>
-
-<h3>What’s Coming to GhostLink</h3>
-<p>
-Future versions of GhostLink will introduce a secure client portal, live analytics, and even more advanced bot defense. Features in development include:
-</p>
-<ul>
-    <li>Interactive dashboard with traffic analytics and export tools</li>
-    <li>Customizable detection and allow/block rules</li>
-    <li>Advanced request fingerprinting and behavioral analysis</li>
-    <li>Geolocation-based anomaly and threat detection</li>
-    <li>Integrated CAPTCHA or JavaScript challenges for suspicious visitors</li>
-    <li>Community-updated bot signature feeds</li>
-    <li>Paywalling and metering of AI bot data access</li>
-    <li>API integrations and webhooks for automated responses</li>
-</ul>
-</div>
-
 <button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
     Clear Log
 </button>
 <p id="clear-status" style="margin-top:10px; color:#94a3b8;"></p>
 
-<table>
+<!-- Username Filter -->
+<div style="margin-top:20px;">
+    <input type="text" id="username-input" placeholder="Enter username (Ghost or Sherm)" style="padding:0.5rem; border-radius:4px;">
+    <button id="login-btn" style="padding:0.5rem 1rem; border-radius:4px; background:#3b82f6; color:white; border:none; margin-left:10px;">Login</button>
+</div>
+
+<table id="log-table">
     <thead>
         <tr>
             {% for col in columns %}
@@ -101,7 +17,7 @@ Future versions of GhostLink will introduce a secure client portal, live analyti
             {% endfor %}
         </tr>
     </thead>
-    <tbody>
+    <tbody id="log-table-body">
         {% for row in rows %}
             <tr class="{{ row[3]|lower }}">
                 {% for cell in row %}
@@ -127,7 +43,31 @@ document.getElementById('clear-log-button').addEventListener('click', function (
             document.getElementById('clear-status').textContent = 'Error while clearing log.';
         });
 });
-</script>
 
-</body>
-</html>
+// Filter logs based on username
+document.getElementById('login-btn').onclick = function () {
+    let username = document.getElementById('username-input').value.trim();
+    let rows = Array.from(document.querySelectorAll('#log-table tbody tr'));
+    rows.forEach(tr => {
+        let details = tr.children[4].textContent || '';
+        if (username === "Ghost") {
+            // Show only logs from original ghostlink site
+            if (details === "" || details.includes("Pageview (JS not yet checked)")) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        } else if (username === "Sherm") {
+            // Show only logs from the test site
+            if (details.includes("Remote JS log") || details.includes("Logged from external JS client")) {
+                tr.style.display = "";
+            } else {
+                tr.style.display = "none";
+            }
+        } else {
+            // Show nothing for other usernames
+            tr.style.display = "none";
+        }
+    });
+};
+</script>
