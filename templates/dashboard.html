@@ -43,7 +43,7 @@
 <div style="margin-top: 1rem; margin-bottom: 2rem;">
     <h3>Current GhostLink Bot Detection</h3>
     <p>
-        GhostLink currently protects your site with layered, real-time bot detection. All site visits are logged with the visitor’s IP, user agent, timestamp, and classification as human or bot. Any visit identified as a bot is instantly denied access and logged for review.
+        GhostLink protects your site with layered, real-time bot detection. All visits are logged with IP, user agent, timestamp, and type. Bots are instantly denied and logged. Use the username box below to filter logs by site/client.
     </p>
 </div>
 
@@ -58,7 +58,8 @@
     <button id="login-btn" style="padding:0.5rem 1rem; border-radius:4px; background:#3b82f6; color:white; border:none; margin-left:10px;">Login</button>
 </div>
 
-<table id="log-table" style="margin-top:30px;">
+<!-- Log Table -->
+<table id="log-table" style="margin-top:30px; display:none;">
     <thead>
         <tr>
             {% for col in columns %}
@@ -68,7 +69,10 @@
     </thead>
     <tbody id="log-table-body">
         {% for row in rows %}
-            <tr class="{{ row[3]|lower }}" style="display:none">
+            <tr class="{{ row[3]|lower }}"
+                data-details="{{ row[4]|e }}"
+                data-type="{{ row[3]|lower }}"
+                data-ua="{{ row[2]|lower }}">
                 {% for cell in row %}
                     <td>{{ cell }}</td>
                 {% endfor %}
@@ -93,8 +97,9 @@ document.getElementById('clear-log-button').addEventListener('click', function (
         });
 });
 
-// Hide all logs on page load
+// Hide all logs and table on page load
 window.onload = function () {
+    document.getElementById('log-table').style.display = "none";
     let rows = document.querySelectorAll('#log-table tbody tr');
     rows.forEach(tr => tr.style.display = 'none');
 };
@@ -102,26 +107,43 @@ window.onload = function () {
 document.getElementById('login-btn').onclick = function () {
     let username = document.getElementById('username-input').value.trim();
     let rows = Array.from(document.querySelectorAll('#log-table tbody tr'));
-    rows.forEach(tr => {
-        let details = tr.children[4].textContent || '';
-        if (username === "Ghost") {
-            // Only show logs from original ghostlink site (empty details or default)
-            if (details === "" || details.includes("Pageview (JS not yet checked)")) {
+    let anyVisible = false;
+
+    if (username === "Ghost") {
+        // Show: all logs except ones that mention external JS/test client in details
+        rows.forEach(tr => {
+            let details = (tr.getAttribute('data-details') || '').toLowerCase();
+            if (
+                details.includes('remote js log') ||
+                details.includes('logged from external js client') ||
+                details.includes('test client') // Add any other test-site markers here
+            ) {
+                tr.style.display = "none";
+            } else {
                 tr.style.display = "";
+                anyVisible = true;
+            }
+        });
+    } else if (username === "Sherm") {
+        // Show only logs that mention remote JS/external client in details
+        rows.forEach(tr => {
+            let details = (tr.getAttribute('data-details') || '').toLowerCase();
+            if (
+                details.includes('remote js log') ||
+                details.includes('logged from external js client') ||
+                details.includes('test client')
+            ) {
+                tr.style.display = "";
+                anyVisible = true;
             } else {
                 tr.style.display = "none";
             }
-        } else if (username === "Sherm") {
-            // Only show logs from test/client site
-            if (details.includes("Remote JS log") || details.includes("Logged from external JS client")) {
-                tr.style.display = "";
-            } else {
-                tr.style.display = "none";
-            }
-        } else {
-            tr.style.display = "none";
-        }
-    });
+        });
+    } else {
+        rows.forEach(tr => tr.style.display = "none");
+    }
+
+    document.getElementById('log-table').style.display = anyVisible ? "" : "none";
 };
 </script>
 </body>

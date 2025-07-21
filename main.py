@@ -106,11 +106,6 @@ def is_suspicious_headers(headers):
 # --- Flask routes and hooks ---
 @app.before_request
 def universal_bot_block():
-    # --------- FIXED: Allow static files to always go through ---------
-    if request.path.startswith('/static/'):
-        return  # skip bot check for static files (including downloads)
-    # ---------------------------------------------------------------
-
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent', '').lower()
     now = time.time()
@@ -131,6 +126,7 @@ def universal_bot_block():
     if suspicious:
         log_event(ip, user_agent, 'bot', details, "none")
         return "Access denied (suspicious headers)", 403
+    # else, continue to the route
 
 @app.route('/honeypot')
 def honeypot():
