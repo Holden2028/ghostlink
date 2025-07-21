@@ -26,6 +26,14 @@ COMMON_BROWSER_HEADERS = [
 
 ip_activity = {}  # In-memory for rate limiting only
 
+# --- Helper for readable timestamps ---
+def format_timestamp(ts):
+    try:
+        dt = datetime.datetime.fromisoformat(ts)
+        return dt.strftime('%b %d, %Y %I:%M:%S %p UTC')
+    except Exception:
+        return ts  # fallback if parse fails
+
 # --- DB functions ---
 
 def init_db():
@@ -129,7 +137,13 @@ def honeypot():
 def log_json():
     logs = get_logs()
     return jsonify([
-        {"Timestamp": l[0], "IP": l[1], "User Agent": l[2], "Visitor Type": l[3], "Details": l[4]}
+        {
+            "Timestamp": format_timestamp(l[0]),
+            "IP": l[1],
+            "User Agent": l[2],
+            "Visitor Type": l[3],
+            "Details": l[4]
+        }
         for l in logs
     ])
 
@@ -175,7 +189,8 @@ def track_visit():
 def dashboard():
     logs = get_logs()
     columns = ["Timestamp", "IP", "User Agent", "Visitor Type", "Details"]
-    rows = logs
+    # Format timestamp for each log
+    rows = [(format_timestamp(l[0]), l[1], l[2], l[3], l[4]) for l in logs]
     return render_template('dashboard.html', columns=columns, rows=rows)
 
 # --- Background: Upgrade old unclassified to bot (no js) ---
