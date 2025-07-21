@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, send_file
 import csv
 import datetime
 import os
@@ -11,7 +11,8 @@ LOG_FILE = 'log.csv'
 BOT_KEYWORDS = [
    'bot', 'crawler', 'spider', 'crawl', 'slurp',
    'google', 'bing', 'scrape', 'yandex', 'duckduckgo', 'gpt', 'ai',
-   'requests', 'httpx', 'go-http-client'
+   'requests', 'httpx', 'go-http-client', 'curl', 'wget', 'python',
+   'anthropic', 'openai', 'claude', 'chatgpt', 'llm'
 ]
 
 
@@ -63,37 +64,6 @@ def log_request(req):
    return visitor_type
 
 
-@app.route('/log')
-def show_log():
-   with open(LOG_FILE, 'r') as f:
-       rows = list(csv.reader(f))
-
-
-   html = """<html><head><title>Visitor Log</title>
-   <style>
-       .human { background-color: #d4edda; }       /* green */
-       .bot { background-color: #f8d7da; }         /* red */
-       .denied { background-color: #f5c6cb; }      /* darker red */
-       table { border-collapse: collapse; }
-       td, th { padding: 8px; border: 1px solid #ccc; }
-   </style></head><body><h1>Visitor Log</h1><table>
-   """
-
-
-   html += '<tr>' + ''.join(f'<th>{col}</th>' for col in rows[0]) + '</tr>'
-   for row in rows[1:]:
-       visitor_type = row[3].lower()
-       if 'denied' in visitor_type:
-           css_class = 'denied'
-       elif visitor_type == 'bot':
-           css_class = 'bot'
-       else:
-           css_class = 'human'
-       html += f"<tr class='{css_class}'>" + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>'
-
-
-   html += '</table></body></html>'
-   return html
 
 
 @app.route('/log.json')
@@ -109,24 +79,6 @@ def log_json():
        return jsonify(clean_rows)
 
 
-@app.route('/stats')
-def show_stats():
-   with open(LOG_FILE, 'r') as f:
-       reader = csv.DictReader(f)
-       total = bot = human = 0
-       for row in reader:
-           total += 1
-           if row['visitor_type'] == 'bot':
-               bot += 1
-           else:
-               human += 1
-   return jsonify({
-       "total_visits": total,
-       "bots": bot,
-       "humans": human
-   })
-
-
 @app.route('/clear', methods=['GET'])
 def clear_log():
    with open(LOG_FILE, 'w', newline='') as f:
@@ -135,17 +87,45 @@ def clear_log():
    return 'Log cleared.', 200
 
 
-@app.route('/robots.txt')
-def robots_txt():
-   return app.send_static_file('robots.txt')
-
-
 @app.route('/')
-def home():
-   visitor_type = log_request(request)
-   if visitor_type == 'bot':
-       return 'Access denied.', 403
-   return 'Hello, human!', 200
+def homepage():
+   return render_template('index.html')
+
+
+@app.route('/track', methods=['POST'])
+def track_visit():
+   data = request.get_json()
+   timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+   ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+   user_agent = data.get('user_agent', 'unknown')
+   url = data.get('url', 'unknown')
+   referrer = data.get('referrer', '')
+   flag = ''
+   visitor_type = 'human'
+
+
+   for keyword in BOT_KEYWORDS:
+       if keyword in user_agent.lower():
+           visitor_type = 'bot'
+           flag = keyword
+           break
+
+
+   with open(LOG_FILE, 'a', newline='') as f:
+       writer = csv.writer(f)
+       writer.writerow([timestamp, ip, user_agent, visitor_type, flag])
+
+
+   return jsonify({'status': 'logged'}), 200
+
+
+@app.route('/dashboard')
+def dashboard():
+   with open(LOG_FILE, 'r') as f:
+       reader = list(csv.reader(f))
+       columns = reader[0]
+       rows = reader[1:]
+   return render_template('dashboard.html', columns=columns, rows=rows)
 
 
 if __name__ == '__main__':
@@ -153,3 +133,4 @@ if __name__ == '__main__':
    import os
    port = int(os.environ.get("PORT", 5000))
    app.run(host='0.0.0.0', port=port, debug=True)
+
