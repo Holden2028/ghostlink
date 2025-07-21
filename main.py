@@ -9,7 +9,7 @@ LOG_FILE = 'log.csv'
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
     'google', 'bing', 'scrape', 'yandex', 'duckduckgo', 'gpt', 'ai',
-    'requests', 'httpx', 'go-http-client'
+    'requests', 'httpx', 'go-http-client', 'claude'
 ]
 
 @app.before_request
