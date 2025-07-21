@@ -3,6 +3,7 @@ import csv
 import datetime
 import os
 
+robots_enabled = True
 
 app = Flask(__name__)
 LOG_FILE = 'log.csv'
@@ -12,7 +13,7 @@ BOT_KEYWORDS = [
    'bot', 'crawler', 'spider', 'crawl', 'slurp',
    'google', 'bing', 'scrape', 'yandex', 'duckduckgo', 'gpt', 'ai',
    'requests', 'httpx', 'go-http-client', 'curl', 'wget', 'python',
-   'anthropic', 'openai', 'claude', 'chatgpt', 'llm'
+   'anthropic', 'openai', 'llm'
 ]
 
 
@@ -127,6 +128,18 @@ def dashboard():
        rows = reader[1:]
    return render_template('dashboard.html', columns=columns, rows=rows)
 
+@app.route('/robots.txt')
+def robots_txt():
+    if robots_enabled:
+        return send_file('robots.txt')  # or static version if needed
+    else:
+        return '', 404
+
+@app.route('/toggle-robots', methods=['POST'])
+def toggle_robots():
+    global robots_enabled
+    robots_enabled = not robots_enabled
+    return jsonify({'robots_enabled': robots_enabled})
 
 if __name__ == '__main__':
    initialize_log()
