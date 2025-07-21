@@ -1,16 +1,15 @@
-from flask import Flask, request, jsonify, render_template, session, url_for
-import csv
-import datetime
 import os
-import threading
 import time
-from collections import defaultdict
+import datetime
+import threading
+import sqlite3
+from flask import Flask, request, jsonify, render_template, session, url_for
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "changeme")
-LOG_FILE = 'log.csv'
-RATE_LIMIT = 20    # max requests per minute per IP
-RATE_WINDOW = 60   # seconds
+DB_FILE = 'visitlog.db'
+RATE_LIMIT = 20
+RATE_WINDOW = 60
 
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
@@ -20,81 +19,115 @@ BOT_KEYWORDS = [
     'assistant', 'automation',
     'headless', 'selenium', 'puppeteer', 'phantom'
 ]
-
 COMMON_BROWSER_HEADERS = [
     'accept', 'accept-encoding', 'accept-language', 'cache-control', 'cookie', 'dnt',
     'referer', 'user-agent', 'sec-ch-ua'
 ]
 
-# In-memory tracking for pageviews and rate limiting
-recent_pageviews = {}  # {(ip, user_agent): (timestamp, logged_js)}
-ip_activity = defaultdict(list)  # ip: [timestamps]
+ip_activity = {}  # In-memory, for rate limiting only
 
-def initialize_log():
-    if not os.path.exists(LOG_FILE):
-        with open(LOG_FILE, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Details'])
+# --- DB functions ---
+
+def init_db():
+    with sqlite3.connect(DB_FILE) as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                ip TEXT,
+                user_agent TEXT,
+                visitor_type TEXT,
+                details TEXT,
+                session_key TEXT
+            )
+        """)
+
+def log_event(ip, user_agent, visitor_type, details, session_key):
+    with sqlite3.connect(DB_FILE) as con:
+        con.execute(
+            "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
+            (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), ip, user_agent, visitor_type, details, session_key)
+        )
+
+def upgrade_log(session_key, new_type, details):
+    with sqlite3.connect(DB_FILE) as con:
+        # Remove unclassified with same session_key, then add the new event
+        con.execute("DELETE FROM logs WHERE session_key = ? AND visitor_type = 'unclassified'", (session_key,))
+        con.execute(
+            "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
+            (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), '', '', new_type, details, session_key)
+        )
+
+def get_recent_unclassified(time_limit=35):
+    # Return list of (session_key,)
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(seconds=time_limit)
+    with sqlite3.connect(DB_FILE) as con:
+        res = con.execute(
+            "SELECT session_key FROM logs WHERE visitor_type = 'unclassified' AND datetime(substr(timestamp, 1, 20)) < ?",
+            (cutoff.strftime('%b %d, %Y %I:%M:%S'),)
+        )
+        return [r[0] for r in res.fetchall()]
+
+def clear_log():
+    with sqlite3.connect(DB_FILE) as con:
+        con.execute("DELETE FROM logs")
+
+def get_logs():
+    with sqlite3.connect(DB_FILE) as con:
+        return list(con.execute("SELECT timestamp, ip, user_agent, visitor_type, details FROM logs ORDER BY id DESC"))
+
+# --- Header check ---
 
 def is_suspicious_headers(headers):
     lower_headers = {k.lower(): v for k, v in headers.items()}
     missing = [h for h in COMMON_BROWSER_HEADERS if h not in lower_headers]
-    # Check for minimal headers or strange patterns
     if len(missing) > 3 or 'user-agent' not in lower_headers:
         return True, f"Missing headers: {missing}"
     return False, ''
 
-def log_request(req, visitor_type, details=''):
-    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p UTC')
-    ip = req.headers.get('X-Forwarded-For', req.remote_addr)
-    user_agent = req.headers.get('User-Agent', 'unknown')
-    with open(LOG_FILE, 'a', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type, details])
+# --- Flask routes and hooks ---
 
 @app.before_request
 def universal_bot_block():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', '').lower()
     now = time.time()
+    ip_activity.setdefault(ip, [])
     ip_activity[ip] = [t for t in ip_activity[ip] if now - t < RATE_WINDOW]
     ip_activity[ip].append(now)
-    # 1. Rate limit
+    # Rate limit
     if len(ip_activity[ip]) > RATE_LIMIT:
-        log_request(request, "bot", "Rate limit exceeded")
+        log_event(ip, user_agent, "bot", "Rate limit exceeded", "none")
         return "Access denied (rate limit)", 403
-    # 2. Keyword bot UA
-    user_agent = request.headers.get('User-Agent', '').lower()
+    # Keyword match
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
-            log_request(request, 'bot', f"Keyword '{keyword}' in User-Agent")
+            log_event(ip, user_agent, 'bot', f"Keyword '{keyword}' in User-Agent", "none")
             return "Access denied (bot UA)", 403
-    # 3. Suspicious headers
+    # Suspicious headers
     suspicious, details = is_suspicious_headers(request.headers)
     if suspicious:
-        log_request(request, 'bot', details)
+        log_event(ip, user_agent, 'bot', details, "none")
         return "Access denied (suspicious headers)", 403
 
 @app.route('/honeypot')
 def honeypot():
-    log_request(request, "bot", "Honeypot URL triggered")
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    user_agent = request.headers.get('User-Agent', 'unknown')
+    log_event(ip, user_agent, "bot", "Honeypot URL triggered", "none")
     return "Access denied (honeypot).", 403
 
 @app.route('/log.json')
 def log_json():
-    with open(LOG_FILE, 'r') as f:
-        reader = csv.DictReader(f)
-        clean_rows = []
-        for row in reader:
-            if None in row or any(v is None for v in row.values()):
-                continue
-            clean_rows.append(row)
-        return jsonify(clean_rows)
+    logs = get_logs()
+    return jsonify([
+        {"Timestamp": l[0], "IP": l[1], "User Agent": l[2], "Visitor Type": l[3], "Details": l[4]}
+        for l in logs
+    ])
 
 @app.route('/clear', methods=['GET'])
-def clear_log():
-    with open(LOG_FILE, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Details'])
+def clear_log_route():
+    clear_log()
     return 'Log cleared.', 200
 
 @app.route('/robots.txt')
@@ -104,75 +137,50 @@ def robots_txt():
 @app.route('/')
 def homepage():
     session['visited'] = True
-    user_agent = request.headers.get('User-Agent', 'unknown')
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    key = (ip, user_agent)
-    recent_pageviews[key] = {'time': time.time(), 'js': False}
-    # NEW: Log all homepage visits as "unclassified" unless flagged later
-    log_request(request, "unclassified", "Pageview (JS not yet checked)")
+    user_agent = request.headers.get('User-Agent', 'unknown')
+    # Use a session_key unique to this visit for tracking
+    session_key = session.get('session_key')
+    if not session_key:
+        session_key = os.urandom(12).hex()
+        session['session_key'] = session_key
+    # Log as unclassified
+    log_event(ip, user_agent, "unclassified", "Pageview (JS not yet checked)", session_key)
     return render_template('index.html', honeypot_url=url_for('honeypot'))
 
 @app.route('/track', methods=['POST'])
 def track_visit():
     data = request.get_json()
-    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p UTC')
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    user_agent = data.get('user_agent', request.headers.get('User-Agent', 'unknown'))
-    url = data.get('url', 'unknown')
-    referrer = data.get('referrer', '')
     is_headless = data.get('is_headless', False)
-    visitor_type = 'human'
-    details = ''
-
-    # 1. Headless JS signal (optional, if you update your ghost.js)
+    session_key = session.get('session_key')
     if is_headless:
-        visitor_type = 'bot'
-        details = "Detected headless browser via JS"
-        log_request(request, visitor_type, details)
+        upgrade_log(session_key, "bot", "Detected headless browser via JS")
         return "Access denied (headless bot)", 403
-    # 2. Session cookie check
     if not session.get('visited'):
-        visitor_type = 'bot'
-        details = "No session cookie set; likely no-JS bot"
-        log_request(request, visitor_type, details)
+        upgrade_log(session_key, "bot", "No session cookie set; likely no-JS bot")
         return "Access denied (no session cookie)", 403
-    # 3. Mark as JS-executed in memory
-    key = (ip, user_agent)
-    if key in recent_pageviews:
-        recent_pageviews[key]['js'] = True
-    # 4. Final log as human
-    log_request(request, visitor_type, details)
+    # JS ran: mark as human and delete any unclassified entry for this session
+    upgrade_log(session_key, "human", "")
     return jsonify({'status': 'logged'}), 200
 
 @app.route('/dashboard')
 def dashboard():
-    with open(LOG_FILE, 'r') as f:
-        reader = list(csv.reader(f))
-        columns = reader[0]
-        rows = reader[1:][::-1]
-    # Remove "Flag" column if present (shouldn't be, but just in case)
-    columns = [c for c in columns if c.lower() != "flag"]
-    new_rows = []
-    for row in rows:
-        if len(row) == 6:  # drop 5th column (Flag)
-            row.pop(4)
-        new_rows.append(row)
-    return render_template('dashboard.html', columns=columns, rows=new_rows)
+    logs = get_logs()
+    columns = ["Timestamp", "IP", "User Agent", "Visitor Type", "Details"]
+    rows = logs
+    return render_template('dashboard.html', columns=columns, rows=rows)
 
+# --- Background: Upgrade old unclassified to bot (no js) ---
 def cleanup_no_js_visits():
-    # Runs in background: flag pageviews without JS after 30s
     while True:
-        now = time.time()
-        for key, data in list(recent_pageviews.items()):
-            if not data['js'] and now - data['time'] > 30:
-                class DummyReq:
-                    headers = {'User-Agent': key[1], 'X-Forwarded-For': key[0]}
-                log_request(DummyReq, "bot", "No JS detected within 30s")
-                del recent_pageviews[key]
+        # Find unclassified visits >35 seconds old
+        session_keys = get_recent_unclassified()
+        for sk in session_keys:
+            upgrade_log(sk, "bot", "No JS detected within 30s")
         time.sleep(10)
 
 if __name__ == '__main__':
-    initialize_log()
+    init_db()
     threading.Thread(target=cleanup_no_js_visits, daemon=True).start()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
