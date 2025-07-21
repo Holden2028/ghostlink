@@ -103,14 +103,13 @@ def robots_txt():
 
 @app.route('/')
 def homepage():
-    # Set session cookie to test for no-JS/cookie bots
     session['visited'] = True
-    # Log every pageview (backend)
     user_agent = request.headers.get('User-Agent', 'unknown')
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     key = (ip, user_agent)
     recent_pageviews[key] = {'time': time.time(), 'js': False}
-    # Insert honeypot link in rendered template
+    # NEW: Log all homepage visits as "unclassified" unless flagged later
+    log_request(request, "unclassified", "Pageview (JS not yet checked)")
     return render_template('index.html', honeypot_url=url_for('honeypot'))
 
 @app.route('/track', methods=['POST'])
