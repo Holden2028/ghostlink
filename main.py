@@ -182,21 +182,25 @@ def track_visit():
     is_headless = data.get('is_headless', False)
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = data.get('user_agent', request.headers.get('User-Agent', 'unknown'))
-
-    # Accept remote logging: use IP+UA as pseudo-session_key
     session_key = session.get('session_key')
-    if not session_key:
+
+    # Check if this is from a real session (main GhostLink site)
+    if session.get('visited'):
+        # Upgrade the log for this session
+        if is_headless:
+            upgrade_log(session_key, "bot", "Detected headless browser via JS")
+            return "Access denied (headless bot)", 403
+        upgrade_log(session_key, "human", "")
+        return jsonify({'status': 'logged'}), 200
+    else:
+        # External JS client (no session)
         session_key = f"remote-{ip}-{user_agent[:30]}"
-        # LOG a new event if one does not exist
         log_event(ip, user_agent, "unclassified", "Remote JS log (no session)", session_key)
-
-    if is_headless:
-        upgrade_log(session_key, "bot", "Detected headless browser via JS")
-        return "Access denied (headless bot)", 403
-
-    # Mark as human (upgrade or just log as human)
-    upgrade_log(session_key, "human", "Logged from external JS client")
-    return jsonify({'status': 'logged'}), 200
+        if is_headless:
+            upgrade_log(session_key, "bot", "Detected headless browser via JS")
+            return "Access denied (headless bot)", 403
+        upgrade_log(session_key, "human", "Logged from external JS client")
+        return jsonify({'status': 'logged'}), 200
 
 @app.route('/dashboard')
 def dashboard():
