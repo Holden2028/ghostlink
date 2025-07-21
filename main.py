@@ -24,7 +24,7 @@ COMMON_BROWSER_HEADERS = [
     'referer', 'user-agent', 'sec-ch-ua'
 ]
 
-ip_activity = {}  # In-memory, for rate limiting only
+ip_activity = {}  # In-memory for rate limiting only
 
 # --- DB functions ---
 
@@ -46,7 +46,7 @@ def log_event(ip, user_agent, visitor_type, details, session_key):
     with sqlite3.connect(DB_FILE) as con:
         con.execute(
             "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
-            (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), ip, user_agent, visitor_type, details, session_key)
+            (datetime.datetime.utcnow().isoformat(), ip, user_agent, visitor_type, details, session_key)
         )
 
 def upgrade_log(session_key, new_type, details):
@@ -64,16 +64,15 @@ def upgrade_log(session_key, new_type, details):
             # Insert the new log with the same info
             con.execute(
                 "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
-                (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), ip, user_agent, new_type, details, session_key)
+                (datetime.datetime.utcnow().isoformat(), ip, user_agent, new_type, details, session_key)
             )
 
 def get_recent_unclassified(time_limit=35):
-    # Return list of session_keys for unclassified logs older than time_limit seconds
     cutoff = datetime.datetime.utcnow() - datetime.timedelta(seconds=time_limit)
     with sqlite3.connect(DB_FILE) as con:
         res = con.execute(
-            "SELECT session_key FROM logs WHERE visitor_type = 'unclassified' AND strftime('%s', timestamp) < strftime('%s', ?)",
-            (cutoff.strftime('%b %d, %Y %I:%M:%S %p UTC'),)
+            "SELECT session_key FROM logs WHERE visitor_type = 'unclassified' AND timestamp < ?",
+            (cutoff.isoformat(),)
         )
         return [r[0] for r in res.fetchall()]
 
