@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session, make_response, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session, url_for
 import csv
 import datetime
 import os
@@ -22,7 +22,8 @@ BOT_KEYWORDS = [
 ]
 
 COMMON_BROWSER_HEADERS = [
-    'accept', 'accept-encoding', 'accept-language', 'cache-control', 'cookie', 'dnt', 'referer', 'user-agent', 'sec-ch-ua'
+    'accept', 'accept-encoding', 'accept-language', 'cache-control', 'cookie', 'dnt',
+    'referer', 'user-agent', 'sec-ch-ua'
 ]
 
 # In-memory tracking for pageviews and rate limiting
@@ -33,14 +34,7 @@ def initialize_log():
     if not os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag', 'Details'])
-
-def classify_visitor(user_agent):
-    ua = user_agent.lower()
-    for keyword in BOT_KEYWORDS:
-        if keyword in ua:
-            return 'bot', keyword
-    return 'human', ''
+            writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Details'])
 
 def is_suspicious_headers(headers):
     lower_headers = {k.lower(): v for k, v in headers.items()}
@@ -50,40 +44,40 @@ def is_suspicious_headers(headers):
         return True, f"Missing headers: {missing}"
     return False, ''
 
-def log_request(req, visitor_type, flag, details=''):
+def log_request(req, visitor_type, details=''):
     timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p UTC')
     ip = req.headers.get('X-Forwarded-For', req.remote_addr)
     user_agent = req.headers.get('User-Agent', 'unknown')
     with open(LOG_FILE, 'a', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type, flag, details])
+        writer.writerow([timestamp, ip, user_agent, visitor_type, details])
 
 @app.before_request
-def block_known_bots():
-    # Simple rate limiting
+def universal_bot_block():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     now = time.time()
     ip_activity[ip] = [t for t in ip_activity[ip] if now - t < RATE_WINDOW]
     ip_activity[ip].append(now)
+    # 1. Rate limit
     if len(ip_activity[ip]) > RATE_LIMIT:
-        log_request(request, "bot (rate)", "rate_limit", "Too many requests")
-        return "Rate limit exceeded", 429
-
+        log_request(request, "bot", "Rate limit exceeded")
+        return "Access denied (rate limit)", 403
+    # 2. Keyword bot UA
     user_agent = request.headers.get('User-Agent', '').lower()
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
-            log_request(request, 'bot (denied)', keyword, 'Keyword in UA')
-            return "Access denied", 403
-
+            log_request(request, 'bot', f"Keyword '{keyword}' in User-Agent")
+            return "Access denied (bot UA)", 403
+    # 3. Suspicious headers
     suspicious, details = is_suspicious_headers(request.headers)
     if suspicious:
-        log_request(request, 'bot (suspicious headers)', '', details)
-        # You could block here, or just log: return "Suspicious headers", 403
+        log_request(request, 'bot', details)
+        return "Access denied (suspicious headers)", 403
 
 @app.route('/honeypot')
 def honeypot():
-    log_request(request, "bot (honeypot)", "", "Honeypot URL triggered")
-    return "Access denied.", 403
+    log_request(request, "bot", "Honeypot URL triggered")
+    return "Access denied (honeypot).", 403
 
 @app.route('/log.json')
 def log_json():
@@ -100,7 +94,7 @@ def log_json():
 def clear_log():
     with open(LOG_FILE, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag', 'Details'])
+        writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Details'])
     return 'Log cleared.', 200
 
 @app.route('/robots.txt')
@@ -128,38 +122,27 @@ def track_visit():
     url = data.get('url', 'unknown')
     referrer = data.get('referrer', '')
     is_headless = data.get('is_headless', False)
-    flag = ''
     visitor_type = 'human'
     details = ''
 
-    # Headless JS signal (optional, if you update your ghost.js)
+    # 1. Headless JS signal (optional, if you update your ghost.js)
     if is_headless:
-        visitor_type = 'bot (headless)'
-        flag = 'headless'
+        visitor_type = 'bot'
         details = "Detected headless browser via JS"
-
-    for keyword in BOT_KEYWORDS:
-        if keyword in user_agent.lower():
-            visitor_type = 'bot'
-            flag = keyword
-            details = 'Keyword in UA'
-            break
-
-    # Mark as JS-executed in memory
+        log_request(request, visitor_type, details)
+        return "Access denied (headless bot)", 403
+    # 2. Session cookie check
+    if not session.get('visited'):
+        visitor_type = 'bot'
+        details = "No session cookie set; likely no-JS bot"
+        log_request(request, visitor_type, details)
+        return "Access denied (no session cookie)", 403
+    # 3. Mark as JS-executed in memory
     key = (ip, user_agent)
     if key in recent_pageviews:
         recent_pageviews[key]['js'] = True
-
-    # Check for missing cookie (no session)
-    if not session.get('visited'):
-        visitor_type = 'bot (no cookie)'
-        details = "No session cookie set; likely no-JS bot"
-
-    # Log the /track event
-    with open(LOG_FILE, 'a', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type, flag, details])
-
+    # 4. Final log as human
+    log_request(request, visitor_type, details)
     return jsonify({'status': 'logged'}), 200
 
 @app.route('/dashboard')
@@ -168,7 +151,14 @@ def dashboard():
         reader = list(csv.reader(f))
         columns = reader[0]
         rows = reader[1:][::-1]
-    return render_template('dashboard.html', columns=columns, rows=rows)
+    # Remove "Flag" column if present (shouldn't be, but just in case)
+    columns = [c for c in columns if c.lower() != "flag"]
+    new_rows = []
+    for row in rows:
+        if len(row) == 6:  # drop 5th column (Flag)
+            row.pop(4)
+        new_rows.append(row)
+    return render_template('dashboard.html', columns=columns, rows=new_rows)
 
 def cleanup_no_js_visits():
     # Runs in background: flag pageviews without JS after 30s
@@ -176,10 +166,9 @@ def cleanup_no_js_visits():
         now = time.time()
         for key, data in list(recent_pageviews.items()):
             if not data['js'] and now - data['time'] > 30:
-                # Log as likely bot (no JS)
                 class DummyReq:
                     headers = {'User-Agent': key[1], 'X-Forwarded-For': key[0]}
-                log_request(DummyReq, "bot (no js)", '', "No JS detected within 30s")
+                log_request(DummyReq, "bot", "No JS detected within 30s")
                 del recent_pageviews[key]
         time.sleep(10)
 
