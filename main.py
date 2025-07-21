@@ -51,20 +51,29 @@ def log_event(ip, user_agent, visitor_type, details, session_key):
 
 def upgrade_log(session_key, new_type, details):
     with sqlite3.connect(DB_FILE) as con:
-        # Remove unclassified with same session_key, then add the new event
-        con.execute("DELETE FROM logs WHERE session_key = ? AND visitor_type = 'unclassified'", (session_key,))
-        con.execute(
-            "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
-            (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), '', '', new_type, details, session_key)
+        # Find the unclassified log for this session_key
+        cur = con.execute(
+            "SELECT ip, user_agent FROM logs WHERE session_key = ? AND visitor_type = 'unclassified' ORDER BY id DESC LIMIT 1",
+            (session_key,)
         )
+        row = cur.fetchone()
+        if row:
+            ip, user_agent = row
+            # Delete the unclassified log
+            con.execute("DELETE FROM logs WHERE session_key = ? AND visitor_type = 'unclassified'", (session_key,))
+            # Insert the new log with the same info
+            con.execute(
+                "INSERT INTO logs (timestamp, ip, user_agent, visitor_type, details, session_key) VALUES (?, ?, ?, ?, ?, ?)",
+                (datetime.datetime.utcnow().strftime('%b %d, %Y %I:%M:%S %p UTC'), ip, user_agent, new_type, details, session_key)
+            )
 
 def get_recent_unclassified(time_limit=35):
-    # Return list of (session_key,)
+    # Return list of session_keys for unclassified logs older than time_limit seconds
     cutoff = datetime.datetime.utcnow() - datetime.timedelta(seconds=time_limit)
     with sqlite3.connect(DB_FILE) as con:
         res = con.execute(
-            "SELECT session_key FROM logs WHERE visitor_type = 'unclassified' AND datetime(substr(timestamp, 1, 20)) < ?",
-            (cutoff.strftime('%b %d, %Y %I:%M:%S'),)
+            "SELECT session_key FROM logs WHERE visitor_type = 'unclassified' AND strftime('%s', timestamp) < strftime('%s', ?)",
+            (cutoff.strftime('%b %d, %Y %I:%M:%S %p UTC'),)
         )
         return [r[0] for r in res.fetchall()]
 
