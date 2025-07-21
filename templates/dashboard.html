@@ -1,3 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GhostLink Dashboard</title>
+    <style>
+        body {
+            background-color: #0f1115;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 2rem;
+        }
+        h1 { color: #3b82f6; }
+        h3 { color: #e2e8f0; margin-top: 1.5rem; }
+        p, li { color: #cbd5e1; line-height: 1.6; }
+        ul { margin-left: 1.5rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid #334155;
+            text-align: left;
+        }
+        .human { background-color: #1a2e1f; }
+        .bot { background-color: #3f1e1e; }
+        .denied { background-color: #5a1e1e; }
+    </style>
+</head>
+<body>
+<nav style="position: absolute; top: 1rem; left: 1rem;">
+    <select onchange="location = this.value;" style="padding: 0.5rem; font-size: 1rem;">
+        <option selected disabled>Menu</option>
+        <option value="/">Home</option>
+        <option value="/dashboard">Dashboard</option>
+    </select>
+</nav>
+
+<h1>Visitor Log Dashboard</h1>
+
+<div style="margin-top: 1rem; margin-bottom: 2rem;">
+    <h3>Current GhostLink Bot Detection</h3>
+    <p>
+        GhostLink currently protects your site with layered, real-time bot detection. All site visits are logged with the visitor’s IP, user agent, timestamp, and classification as human or bot. Any visit identified as a bot is instantly denied access and logged for review.
+    </p>
+</div>
+
 <button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
     Clear Log
 </button>
@@ -9,7 +58,7 @@
     <button id="login-btn" style="padding:0.5rem 1rem; border-radius:4px; background:#3b82f6; color:white; border:none; margin-left:10px;">Login</button>
 </div>
 
-<table id="log-table">
+<table id="log-table" style="margin-top:30px;">
     <thead>
         <tr>
             {% for col in columns %}
@@ -19,7 +68,7 @@
     </thead>
     <tbody id="log-table-body">
         {% for row in rows %}
-            <tr class="{{ row[3]|lower }}">
+            <tr class="{{ row[3]|lower }}" style="display:none">
                 {% for cell in row %}
                     <td>{{ cell }}</td>
                 {% endfor %}
@@ -44,30 +93,36 @@ document.getElementById('clear-log-button').addEventListener('click', function (
         });
 });
 
-// Filter logs based on username
+// Hide all logs on page load
+window.onload = function () {
+    let rows = document.querySelectorAll('#log-table tbody tr');
+    rows.forEach(tr => tr.style.display = 'none');
+};
+
 document.getElementById('login-btn').onclick = function () {
     let username = document.getElementById('username-input').value.trim();
     let rows = Array.from(document.querySelectorAll('#log-table tbody tr'));
     rows.forEach(tr => {
         let details = tr.children[4].textContent || '';
         if (username === "Ghost") {
-            // Show only logs from original ghostlink site
+            // Only show logs from original ghostlink site (empty details or default)
             if (details === "" || details.includes("Pageview (JS not yet checked)")) {
                 tr.style.display = "";
             } else {
                 tr.style.display = "none";
             }
         } else if (username === "Sherm") {
-            // Show only logs from the test site
+            // Only show logs from test/client site
             if (details.includes("Remote JS log") || details.includes("Logged from external JS client")) {
                 tr.style.display = "";
             } else {
                 tr.style.display = "none";
             }
         } else {
-            // Show nothing for other usernames
             tr.style.display = "none";
         }
     });
 };
 </script>
+</body>
+</html>
