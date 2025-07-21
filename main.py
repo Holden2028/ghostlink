@@ -97,7 +97,13 @@ def get_logs():
 def is_suspicious_headers(headers):
     lower_headers = {k.lower(): v for k, v in headers.items()}
     missing = [h for h in COMMON_BROWSER_HEADERS if h not in lower_headers]
-    if len(missing) > 3 or 'user-agent' not in lower_headers:
+    # Never block for just missing 'referer' or 'cookie' alone
+    important = set(['user-agent', 'accept', 'accept-language'])
+    if any(h not in lower_headers for h in important):
+        return True, f"Missing critical browser headers: {important - set(lower_headers.keys())}"
+    # Only block if 2 or more important headers (not referer/cookie) are missing
+    missing_critical = [h for h in missing if h not in ('referer', 'cookie')]
+    if len(missing_critical) >= 2:
         return True, f"Missing headers: {missing}"
     return False, ''
 
