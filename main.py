@@ -89,7 +89,8 @@ def clear_log():
 
 @app.route('/')
 def homepage():
-   return render_template('index.html')
+    log_request(request)
+    return render_template('index.html')
 
 
 @app.route('/track', methods=['POST'])
