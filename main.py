@@ -86,17 +86,27 @@ def clear_log():
         writer.writerow(['Timestamp', 'IP', 'User Agent', 'Visitor Type', 'Flag'])
     return 'Log cleared.', 200
 
+
 @app.route('/robots.txt')
 def robots_txt():
-    # Log bot checking robots.txt
-    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    user_agent = request.headers.get('User-Agent', 'unknown')
-    visitor_type, flag = classify_visitor(user_agent)
+    print("robots.txt route accessed!")  # This will show in your Render logs
 
-    with open(LOG_FILE, 'a', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([timestamp, ip, user_agent, visitor_type, flag or 'robots.txt'])
+    try:
+        timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        visitor_type, flag = classify_visitor(user_agent)
+
+        print(f"Logging: {timestamp}, {ip}, {user_agent}")  # Debug output
+
+        with open(LOG_FILE, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([timestamp, ip, user_agent, visitor_type, flag or 'robots.txt'])
+
+        print("Successfully logged to CSV")
+
+    except Exception as e:
+        print(f"Error logging: {e}")
 
     return send_file('robots.txt')
 
