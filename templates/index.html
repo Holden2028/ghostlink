@@ -12,31 +12,26 @@
             margin: 0;
             padding: 0;
         }
-
         header {
             background-color: #111827;
             padding: 3rem 1rem;
             text-align: center;
             border-bottom: 2px solid #3b82f6;
         }
-
         header h1 {
             color: #3b82f6;
             font-size: 3rem;
             margin-bottom: 0.5rem;
         }
-
         header p {
             color: #94a3b8;
             font-size: 1.2rem;
         }
-
         .container {
             max-width: 900px;
             margin: 2rem auto;
             padding: 1rem;
         }
-
         .section {
             background-color: #1e293b;
             border-left: 5px solid #3b82f6;
@@ -45,69 +40,58 @@
             margin-bottom: 2rem;
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
         }
-
         .section h2 {
             color: #e2e8f0;
             margin-top: 0;
         }
-
         .section p {
             color: #cbd5e1;
             line-height: 1.6;
         }
-
-        ul {
+        ul, ol {
             margin-top: 1rem;
             padding-left: 1.5rem;
         }
-
-        ul li {
+        ul li, ol li {
             color: #cbd5e1;
             line-height: 1.5;
         }
-
         footer {
             text-align: center;
             padding: 2rem 1rem;
             font-size: 0.9rem;
             color: #64748b;
         }
+        nav {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+        }
     </style>
 </head>
-<a href="{{ honeypot_url }}" style="display:none">donotclick</a>
 <body>
     <header>
         <h1>GhostLink</h1>
         <p>Protect your content. Control your traffic.</p>
     </header>
-    <nav style="position: absolute; top: 1rem; left: 1rem;">
+    <nav>
         <select onchange="location = this.value;" style="padding: 0.5rem; font-size: 1rem;">
             <option selected disabled>Menu</option>
             <option value="/">Home</option>
             <option value="/dashboard">Dashboard</option>
         </select>
     </nav>
-
-
+    <a href="{{ honeypot_url }}" style="display:none">donotclick</a>
     <div class="container">
         <div class="section">
             <h2>The Problem</h2>
-            <p>
-                Over <strong>45% of all web traffic</strong> is made by bots — not people. AI models and scrapers crawl millions of websites daily, copying data, training algorithms, and draining server resources without permission.
-            </p>
-            <p>
-                As <em>WIRED</em> reported: “<em>Web publishers are being quietly stripped of their traffic while their content trains AI systems for free.</em>”
-            </p>
-            <p>
-                This leads to <strong>lower ad revenue, slower sites, and fewer page views</strong> for real users. Many bots ignore robots.txt and spoof browser headers to get in unnoticed.
-            </p>
+            <p>Over <strong>45% of all web traffic</strong> is made by bots — not people. AI models and scrapers crawl millions of websites daily, copying data, training algorithms, and draining server resources without permission.</p>
+            <p>As <em>WIRED</em> reported: “<em>Web publishers are being quietly stripped of their traffic while their content trains AI systems for free.</em>”</p>
+            <p>This leads to <strong>lower ad revenue, slower sites, and fewer page views</strong> for real users. Many bots ignore robots.txt and spoof browser headers to get in unnoticed.</p>
         </div>
-
         <div class="section">
             <h2>Our Solution</h2>
-            <p>
-                <strong>GhostLink</strong> is an easy-to-deploy tracker that logs every visit to your site. It identifies bot traffic, logs it with full metadata, and blocks known bad actors in real time — helping you regain control over who uses your data.
-            </p>
+            <p><strong>GhostLink</strong> is an easy-to-deploy tracker that logs every visit to your site. It identifies bot traffic, logs it with full metadata, and blocks known bad actors in real time — helping you regain control over who uses your data.</p>
             <ul>
                 <li>Detects bots using user-agent and header patterns</li>
                 <li>Blocks known scrapers and loggers</li>
@@ -115,15 +99,10 @@
                 <li>Simple web UI to view logs and export data</li>
             </ul>
         </div>
-
         <div class="section">
             <h2>Download GhostLink</h2>
-            <p>
-                Ready to protect your site? Download GhostLink and install it in seconds.
-            </p>
-            <a href="/static/ghostlink.zip" download style="display:inline-block;padding:12px 24px;background-color:#3b82f6;color:white;border-radius:6px;text-decoration:none;margin-top:10px;">
-                Download GhostLink
-            </a>
+            <p>Ready to protect your site? Download GhostLink and install it in seconds.</p>
+            <a href="/static/ghostlink.zip" download style="display:inline-block;padding:12px 24px;background-color:#3b82f6;color:white;border-radius:6px;text-decoration:none;margin-top:10px;">Download GhostLink</a>
         </div>
         <div class="section">
             <h2>How to Install GhostLink (No Coding Required)</h2>
@@ -131,35 +110,21 @@
                 <li><strong>Download the GhostLink ZIP file</strong> from the button above.</li>
                 <li><strong>Unzip it</strong> — inside, you’ll see a file called <code>ghost.js</code>.</li>
                 <li><strong>Upload <code>ghost.js</code> to your website's file manager</strong> (for example, into a <code>/static</code> or <code>/js</code> folder).</li>
-                <li>
-                    <strong>Edit your homepage</strong> and add the following line inside the <code>&lt;head&gt;</code> tag:<br><br>
-                    <code>&lt;script src="/path/to/ghost.js"&gt;&lt;/script&gt;</code><br><br>
+                <li><strong>Edit your homepage</strong> and add the following line inside the <code>&lt;head&gt;</code> tag:<br><br>
+                    <code>&lt;script src=\"/path/to/ghost.js\"&gt;&lt;/script&gt;</code><br><br>
                     Replace <code>/path/to/ghost.js</code> with the correct location (like <code>/static/ghost.js</code>).
                 </li>
-                <li>
-                    <strong>Save and upload your homepage</strong> if needed.
-                </li>
-                <li>
-                    That’s it — <strong>GhostLink is now tracking visits!</strong> You can view logs on our dashboard.
-                </li>
+                <li><strong>Save and upload your homepage</strong> if needed.</li>
+                <li>That’s it — <strong>GhostLink is now tracking visits!</strong> You can view logs on our dashboard.</li>
             </ol>
         </div>
-
-
         <div class="section">
             <h2>Why It Matters</h2>
-            <p>
-                AI scraping and content theft are not future threats — they are happening now. GhostLink empowers you to defend your content, protect your ad revenue, and stop invisible traffic theft.
-            </p>
-            <p>
-                Our tool is fast, free, and deployable on any Flask-based site in under 10 minutes.
-            </p>
+            <p>AI scraping and content theft are not future threats — they are happening now. GhostLink empowers you to defend your content, protect your ad revenue, and stop invisible traffic theft.</p>
+            <p>Our tool is fast, free, and deployable on any Flask-based site in under 10 minutes.</p>
         </div>
     </div>
-
-    <footer>
-        &copy; 2025 GhostLink. Built to protect creators and publishers.
-    </footer>
-    <script src="/static/ghost.js"></script>
+    <footer>&copy; 2025 GhostLink. Built to protect creators and publishers.</footer>
+    <script src="{{ url_for('static', filename='ghost.js') }}"></script>
 </body>
 </html>
