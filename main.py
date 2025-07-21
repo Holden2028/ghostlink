@@ -125,7 +125,7 @@ def dashboard():
     with open(LOG_FILE, 'r') as f:
         reader = list(csv.reader(f))
         columns = reader[0]
-        rows = reader[1:]
+        rows = reader[1:][::-1]  # reverse rows so newest first
     return render_template('dashboard.html', columns=columns, rows=rows)
 
 if __name__ == '__main__':
