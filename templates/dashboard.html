@@ -59,9 +59,6 @@
 <button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
     Clear Log
 </button>
-<button id="toggle-robots" style="margin-left: 1rem; padding: 0.5rem 1rem; background-color: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer;">
-    Toggle robots.txt
-</button>
 <p id="robots-status" style="margin-top:10px; color:#94a3b8;"></p>
 
 <p id="clear-status" style="margin-top:10px; color:#94a3b8;"></p>
@@ -97,19 +94,6 @@ document.getElementById('clear-log-button').addEventListener('click', function (
         })
         .catch(() => {
             document.getElementById('clear-status').textContent = 'Error while clearing log.';
-        });
-});
-</script>
-<script>
-document.getElementById('toggle-robots').addEventListener('click', function () {
-    fetch('/toggle-robots', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('robots-status').textContent =
-                data.robots_enabled ? 'robots.txt is ENABLED (bots will see it)' : 'robots.txt is DISABLED (bots won’t see it)';
-        })
-        .catch(() => {
-            document.getElementById('robots-status').textContent = 'Error toggling robots.txt';
         });
 });
 </script>
