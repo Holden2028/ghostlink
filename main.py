@@ -180,15 +180,18 @@ def homepage():
 def track_visit():
     data = request.get_json()
     is_headless = data.get('is_headless', False)
+    # Accept remote logging: generate a session_key for new clients
     session_key = session.get('session_key')
+    if not session_key:
+        # For remote JS clients, use their IP+UA as pseudo-session (or generate a random key)
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        user_agent = data.get('user_agent', request.headers.get('User-Agent', 'unknown'))
+        session_key = f"remote-{ip}-{user_agent[:30]}"
     if is_headless:
         upgrade_log(session_key, "bot", "Detected headless browser via JS")
         return "Access denied (headless bot)", 403
-    if not session.get('visited'):
-        upgrade_log(session_key, "bot", "No session cookie set; likely no-JS bot")
-        return "Access denied (no session cookie)", 403
-    # JS ran: mark as human and delete any unclassified entry for this session
-    upgrade_log(session_key, "human", "")
+    # NO "session['visited']" check for remote logs!
+    upgrade_log(session_key, "human", "Logged from external JS client")
     return jsonify({'status': 'logged'}), 200
 
 @app.route('/dashboard')
