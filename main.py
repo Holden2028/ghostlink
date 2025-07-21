@@ -53,20 +53,6 @@ def log_request(req):
     return visitor_type
 
 
-    html += '<tr>' + ''.join(f'<th>{col}</th>' for col in rows[0]) + '</tr>'
-    for row in rows[1:]:
-        visitor_type = row[3].lower()
-        if 'denied' in visitor_type:
-            css_class = 'denied'
-        elif visitor_type == 'bot':
-            css_class = 'bot'
-        else:
-            css_class = 'human'
-        html += f"<tr class='{css_class}'>" + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>'
-
-    html += '</table></body></html>'
-    return html
-
 @app.route('/log.json')
 def log_json():
     with open(LOG_FILE, 'r') as f:
