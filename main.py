@@ -20,7 +20,7 @@ def block_known_bots():
     user_agent = request.headers.get('User-Agent', '').lower()
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
-            timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+            timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p UTC')
             ip = request.headers.get('X-Forwarded-For', request.remote_addr)
             flag = keyword
 
@@ -44,7 +44,7 @@ def classify_visitor(user_agent):
     return 'human', ''
 
 def log_request(req):
-    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
+    timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p UTC')
     ip = request.headers.get('X-Forwarded-For', req.remote_addr)
     user_agent = req.headers.get('User-Agent', 'unknown')
     visitor_type, flag = classify_visitor(user_agent)
