@@ -127,6 +127,9 @@ def dashboard():
        rows = reader[1:]
    return render_template('dashboard.html', columns=columns, rows=rows)
 
+@app.route('/robots.txt')
+def robots_txt():
+    return send_file('robots.txt')
 
 if __name__ == '__main__':
    initialize_log()
