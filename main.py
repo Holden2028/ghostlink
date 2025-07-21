@@ -95,6 +95,7 @@ def robots_txt():
 
 @app.route('/')
 def homepage():
+    log_request(request)
     return render_template('index.html')
 
 @app.route('/track', methods=['POST'])
