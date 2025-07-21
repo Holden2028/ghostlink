@@ -15,6 +15,20 @@
             color: #3b82f6;
         }
 
+        h3 {
+            color: #e2e8f0;
+            margin-top: 1.5rem;
+        }
+
+        p, li {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        ul {
+            margin-left: 1.5rem;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -40,38 +54,64 @@
         <option value="/dashboard">Dashboard</option>
     </select>
 </nav>
-    <h1>Visitor Log Dashboard</h1>
+
+<h1>Visitor Log Dashboard</h1>
+
+<div style="margin-top: 1rem; margin-bottom: 2rem;">
+    <h3>What You See Here</h3>
+    <p>This dashboard shows every visit to your site. Each row logs the visitor’s IP address, browser information (user agent), time of visit, and whether the system identified them as a human or a bot. Bots are denied access and still logged for transparency.</p>
+
+    <h3>What Future GhostLink Clients Will Access</h3>
+    <p>In future versions, GhostLink clients will log into a secure dashboard where they can monitor analytics, view traffic graphs, and configure rules. Options will include allowing or blocking specific bots, exporting reports, and even enabling paywalls to monetize data access. Advanced threat controls and integrations will be included.</p>
+
+    <h3>Bot Detection: Current and Planned</h3>
+    <p><strong>Currently used detection methods:</strong></p>
+    <ul>
+        <li>User-Agent keyword matching (e.g., GPTBot, Claude, curl, Python, requests)</li>
+        <li>Real-time access blocking of known bot signatures</li>
+        <li>Metadata logging: timestamp, IP, User-Agent, flag</li>
+    </ul>
+    <p><strong>Planned future methods:</strong></p>
+    <ul>
+        <li>Header and request fingerprinting</li>
+        <li>Rate-based throttling and behavior monitoring</li>
+        <li>Geolocation-based anomaly detection</li>
+        <li>CAPTCHA / JavaScript challenges</li>
+        <li>Community-updated bot signature lists</li>
+    </ul>
+</div>
 
 <button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
     Clear Log
 </button>
 <p id="clear-status" style="margin-top:10px; color:#94a3b8;"></p>
 
-    <table>
-        <thead>
-            <tr>
-                {% for col in columns %}
-                    <th>{{ col }}</th>
+<table>
+    <thead>
+        <tr>
+            {% for col in columns %}
+                <th>{{ col }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            <tr class="{{ row[3]|lower }}">
+                {% for cell in row %}
+                    <td>{{ cell }}</td>
                 {% endfor %}
             </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                <tr class="{{ row[3]|lower }}">
-                    {% for cell in row %}
-                        <td>{{ cell }}</td>
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        {% endfor %}
+    </tbody>
+</table>
+
 <script>
 document.getElementById('clear-log-button').addEventListener('click', function () {
     fetch('/clear')
         .then(response => {
             if (response.ok) {
                 document.getElementById('clear-status').textContent = 'Log cleared successfully.';
-                location.reload(); // refresh the page to update the log table
+                location.reload();
             } else {
                 document.getElementById('clear-status').textContent = 'Failed to clear log.';
             }
