@@ -9,22 +9,25 @@ LOG_FILE = 'log.csv'
 BOT_KEYWORDS = [
     'bot', 'crawler', 'spider', 'crawl', 'slurp',
     'google', 'bing', 'scrape', 'yandex', 'duckduckgo', 'gpt', 'ai',
-    'requests', 'httpx', 'go-http-client'
+    'requests', 'httpx', 'go-http-client', 'curl', 'wget', 'python',
+    'anthropic', 'openai', 'claude', 'chatgpt', 'llm'
 ]
 
 @app.before_request
-def block_known_bots():
+def log_and_check_bots():
+    # Skip logging for certain endpoints to avoid infinite loops
+    if request.endpoint in ['log_json', 'clear_log', 'dashboard']:
+        return
+
+    # Log every request first
+    log_request(request)
+
+    # Then check if it should be blocked
     user_agent = request.headers.get('User-Agent', '').lower()
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
-            timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
-            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-            flag = keyword
-
-            with open(LOG_FILE, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([timestamp, ip, user_agent, 'bot (denied)', flag])
-
+            # Update the last log entry to mark it as denied
+            update_last_log_entry_as_denied(keyword)
             return "Access denied", 403
 
 def initialize_log():
@@ -42,7 +45,7 @@ def classify_visitor(user_agent):
 
 def log_request(req):
     timestamp = datetime.datetime.now().strftime('%b %d, %Y %I:%M:%S %p')
-    ip = request.headers.get('X-Forwarded-For', req.remote_addr)
+    ip = req.headers.get('X-Forwarded-For', req.remote_addr)
     user_agent = req.headers.get('User-Agent', 'unknown')
     visitor_type, flag = classify_visitor(user_agent)
 
@@ -52,6 +55,21 @@ def log_request(req):
 
     return visitor_type
 
+
+def update_last_log_entry_as_denied(flag_keyword):
+    # Read all rows
+    with open(LOG_FILE, 'r', newline='') as f:
+        rows = list(csv.reader(f))
+
+    # Update the last row to mark as denied
+    if len(rows) > 1:  # Make sure there's data beyond header
+        rows[-1][3] = 'bot (denied)'  # Visitor Type column
+        rows[-1][4] = flag_keyword  # Flag column
+
+    # Write back all rows
+    with open(LOG_FILE, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
 
 @app.route('/log.json')
 def log_json():
