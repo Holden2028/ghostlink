@@ -180,7 +180,7 @@ def track_visit():
     user_agent = data.get('user_agent', request.headers.get('User-Agent', 'unknown'))
     session_key = session.get('session_key')
 
-    # Check if this is from a real session (main GhostLink site)
+    # Check if this is from a real session (main GhostWall site)
     if session.get('visited'):
         # Upgrade the log for this session
         if is_headless:
