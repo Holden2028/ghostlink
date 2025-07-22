@@ -1,5 +1,5 @@
 (function () {
-    const endpoint = 'https://ghostwall-hn01.onrender.com/track';
+    const endpoint = 'https://ghostwall.onrender.com/track';
     const data = {
         user_agent: navigator.userAgent,
         url: window.location.href,
