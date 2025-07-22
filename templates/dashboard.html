@@ -2,28 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GhostLink Dashboard</title>
+    <title>GhostWall Dashboard</title>
     <style>
-        body {
-            background-color: #0f1115;
-            color: #f1f5f9;
-            font-family: 'Segoe UI', sans-serif;
-            padding: 2rem;
-        }
+        body { background-color: #0f1115; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; padding: 2rem;}
         h1 { color: #3b82f6; }
         h3 { color: #e2e8f0; margin-top: 1.5rem; }
         p, li { color: #cbd5e1; line-height: 1.6; }
         ul { margin-left: 1.5rem; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-        }
-        th, td {
-            padding: 0.75rem;
-            border: 1px solid #334155;
-            text-align: left;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem;}
+        th, td { padding: 0.75rem; border: 1px solid #334155; text-align: left;}
         .human { background-color: #1a2e1f; }
         .bot { background-color: #3f1e1e; }
         .denied { background-color: #5a1e1e; }
@@ -39,26 +26,20 @@
 </nav>
 
 <h1>Visitor Log Dashboard</h1>
-
 <div style="margin-top: 1rem; margin-bottom: 2rem;">
-    <h3>Current GhostLink Bot Detection</h3>
+    <h3>Current GhostWall Bot Detection</h3>
     <p>
-        GhostLink protects your site with layered, real-time bot detection. All visits are logged with IP, user agent, timestamp, and type. Bots are instantly denied and logged. Use the username box below to filter logs by site/client.
+        GhostWall protects your site with layered, real-time bot detection. All visits are logged with IP, user agent, timestamp, and type. Bots are instantly denied and logged. Use the username box below to filter logs by site/client.
     </p>
 </div>
-
 <button id="clear-log-button" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
     Clear Log
 </button>
 <p id="clear-status" style="margin-top:10px; color:#94a3b8;"></p>
-
-<!-- Username Filter -->
 <div style="margin-top:20px;">
     <input type="text" id="username-input" placeholder="Enter username (Ghost or Sherm)" style="padding:0.5rem; border-radius:4px;">
     <button id="login-btn" style="padding:0.5rem 1rem; border-radius:4px; background:#3b82f6; color:white; border:none; margin-left:10px;">Login</button>
 </div>
-
-<!-- Log Table -->
 <table id="log-table" style="margin-top:30px; display:none;">
     <thead>
         <tr>
@@ -80,7 +61,6 @@
         {% endfor %}
     </tbody>
 </table>
-
 <script>
 document.getElementById('clear-log-button').addEventListener('click', function () {
     fetch('/clear')
@@ -96,27 +76,22 @@ document.getElementById('clear-log-button').addEventListener('click', function (
             document.getElementById('clear-status').textContent = 'Error while clearing log.';
         });
 });
-
-// Hide all logs and table on page load
 window.onload = function () {
     document.getElementById('log-table').style.display = "none";
     let rows = document.querySelectorAll('#log-table tbody tr');
     rows.forEach(tr => tr.style.display = 'none');
 };
-
 document.getElementById('login-btn').onclick = function () {
     let username = document.getElementById('username-input').value.trim();
     let rows = Array.from(document.querySelectorAll('#log-table tbody tr'));
     let anyVisible = false;
-
     if (username === "Ghost") {
-        // Show: all logs except ones that mention external JS/test client in details
         rows.forEach(tr => {
             let details = (tr.getAttribute('data-details') || '').toLowerCase();
             if (
                 details.includes('remote js log') ||
                 details.includes('logged from external js client') ||
-                details.includes('test client') // Add any other test-site markers here
+                details.includes('test client')
             ) {
                 tr.style.display = "none";
             } else {
@@ -125,7 +100,6 @@ document.getElementById('login-btn').onclick = function () {
             }
         });
     } else if (username === "Sherm") {
-        // Show only logs that mention remote JS/external client in details
         rows.forEach(tr => {
             let details = (tr.getAttribute('data-details') || '').toLowerCase();
             if (
@@ -142,7 +116,6 @@ document.getElementById('login-btn').onclick = function () {
     } else {
         rows.forEach(tr => tr.style.display = "none");
     }
-
     document.getElementById('log-table').style.display = anyVisible ? "" : "none";
 };
 </script>
