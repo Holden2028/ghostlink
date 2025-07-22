@@ -101,22 +101,23 @@ def is_suspicious_headers(headers):
 # --- Flask routes and hooks ---
 @app.before_request
 def universal_bot_block():
+    # Skip static files and favicon
+    if request.path.startswith('/static/') or request.path == '/favicon.ico':
+        return
+
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent', '').lower()
     now = time.time()
     ip_activity.setdefault(ip, [])
     ip_activity[ip] = [t for t in ip_activity[ip] if now - t < RATE_WINDOW]
     ip_activity[ip].append(now)
-    # Rate limit
     if len(ip_activity[ip]) > RATE_LIMIT:
         log_event(ip, user_agent, "bot", "Rate limit exceeded", "none")
         return "Access denied (rate limit)", 403
-    # Keyword match
     for keyword in BOT_KEYWORDS:
         if keyword in user_agent:
             log_event(ip, user_agent, 'bot', f"Keyword '{keyword}' in User-Agent", "none")
             return "Access denied (bot UA)", 403
-    # Suspicious headers
     suspicious, details = is_suspicious_headers(request.headers)
     if suspicious:
         log_event(ip, user_agent, 'bot', details, "none")
