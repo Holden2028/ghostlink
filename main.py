@@ -108,6 +108,20 @@ def is_suspicious_headers(headers):
 def universal_bot_block():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent', '').lower()
+    # --- ADD THIS BLOCK AT THE TOP ---
+    import datetime
+    log_string = (
+        f"{datetime.datetime.now()} "
+        f"IP: {ip} "
+        f"Path: {request.path} "
+        f"Method: {request.method} "
+        f"User-Agent: {request.headers.get('User-Agent')}"
+    )
+    print(log_string)
+    # Optional: Save to file
+    # with open("access.log", "a") as logfile:
+    #     logfile.write(log_string + "\n")
+    # --- END BLOCK ---
     now = time.time()
     ip_activity.setdefault(ip, [])
     ip_activity[ip] = [t for t in ip_activity[ip] if now - t < RATE_WINDOW]
