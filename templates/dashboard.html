@@ -34,7 +34,6 @@
 
     <script>
     const API_URL = "https://ghostwallapi.onrender.com/logs";
-    const CLEAR_URL = "https://ghostwallapi.onrender.com/clear_logs";
 
     function fetchLogs() {
         fetch(API_URL)
@@ -63,10 +62,10 @@
 
     // Clear log button logic
     document.getElementById("clear-btn").onclick = function () {
-        fetch(CLEAR_URL, { method: "POST" })
+        fetch(API_URL, { method: "DELETE" })
             .then(res => res.json())
             .then(data => {
-                document.getElementById("clear-status").textContent = data.message;
+                document.getElementById("clear-status").textContent = data.message || "Log cleared.";
                 fetchLogs();
             })
             .catch(() => {
