@@ -1,32 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
+   <meta charset="UTF-8" />
    <title>GhostWall | Defend Your Website</title>
-   <link rel="icon" type="image/png" href="{{ url_for('static', filename='TempLogo.png') }}">
+   <link rel="icon" type="image/png" href="{{ url_for('static', filename='TempLogo.png') }}" />
    <style>
-       body { font-family: 'Segoe UI', sans-serif; background-color: #0f1115; color: #f1f5f9; margin: 0; padding: 0; }
-       header { background-color: #111827; padding: 3rem 1rem; text-align: center; border-bottom: 2px solid #3b82f6; }
-       header h1 { color: #3b82f6; font-size: 3rem; margin-bottom: 0.5rem; }
-       header p { color: #94a3b8; font-size: 1.2rem; }
-       .container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
-       .section { background-color: #1e293b; border-left: 5px solid #3b82f6; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);}
-       .section h2 { color: #e2e8f0; margin-top: 0; }
-       .section p { color: #cbd5e1; line-height: 1.6; }
-       ul { margin-top: 1rem; padding-left: 1.5rem; }
-       ul li { color: #cbd5e1; line-height: 1.5; }
-       footer { text-align: center; padding: 2rem 1rem; font-size: 0.9rem; color: #64748b; }
+       body {
+           font-family: 'Segoe UI', sans-serif;
+           background-color: #0f1115;
+           color: #f1f5f9;
+           margin: 0;
+           padding: 0;
+       }
+       header {
+           background-color: #111827;
+           padding: 3rem 1rem;
+           text-align: center;
+           border-bottom: 2px solid #3b82f6;
+       }
+       header h1 {
+           color: #3b82f6;
+           font-size: 3rem;
+           margin-bottom: 0.5rem;
+       }
+       header p {
+           color: #94a3b8;
+           font-size: 1.2rem;
+       }
+       .container {
+           max-width: 900px;
+           margin: 2rem auto;
+           padding: 1rem;
+       }
+       .section {
+           background-color: #1e293b;
+           border-left: 5px solid #3b82f6;
+           border-radius: 10px;
+           padding: 1.5rem;
+           margin-bottom: 2rem;
+           box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+       }
+       .section h2 {
+           color: #e2e8f0;
+           margin-top: 0;
+       }
+       .section p {
+           color: #cbd5e1;
+           line-height: 1.6;
+       }
+       ul {
+           margin-top: 1rem;
+           padding-left: 1.5rem;
+       }
+       ul li {
+           color: #cbd5e1;
+           line-height: 1.5;
+       }
+       footer {
+           text-align: center;
+           padding: 2rem 1rem;
+           font-size: 0.9rem;
+           color: #64748b;
+       }
    </style>
-   <!-- GhostWall API Detection Script -->
+
+   <!-- Universal GhostWall API Detection Script -->
    <script>
    (function () {
-       fetch("https://ghostwallapi.onrender.com/check", {
+       const API_URL = "https://ghostwallapi.onrender.com/check";
+       const API_KEY = "test123"; // Replace with your actual API key for production
+
+       const visitorData = {
+           api_key: API_KEY,
+           user_agent: navigator.userAgent || "",
+           language: navigator.language || "",
+           platform: navigator.platform || ""
+       };
+
+       fetch(API_URL, {
            method: "POST",
            headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({
-               api_key: "test123",
-               user_agent: navigator.userAgent
-           })
+           body: JSON.stringify(visitorData),
+           keepalive: true
+       }).catch(() => {
+           // Fail silently if fetch fails
        });
    })();
    </script>
@@ -34,10 +91,12 @@
 <body>
    <!-- Honeypot link (hidden) -->
    <a href="{{ honeypot_url }}" style="display:none">donotclick</a>
+
    <header>
        <h1>GhostWall</h1>
        <p>Protect your content. Control your traffic.</p>
    </header>
+
    <nav style="position: absolute; top: 1rem; left: 1rem;">
        <select onchange="location = this.value;" style="padding: 0.5rem; font-size: 1rem;">
            <option selected disabled>Menu</option>
@@ -45,6 +104,7 @@
            <option value="/dashboard">Dashboard</option>
        </select>
    </nav>
+
    <div class="container">
        <div class="section">
            <h2>The Problem</h2>
@@ -87,9 +147,9 @@
                <li><strong>Unzip it</strong> — inside, you’ll see a file called <code>ghost.js</code>.</li>
                <li><strong>Upload <code>ghost.js</code> to your website's file manager</strong> (for example, into a <code>/static</code> or <code>/js</code> folder).</li>
                <li>
-                   <strong>Edit your homepage</strong> and add the following line inside the <code>&lt;head&gt;</code> tag:<br><br>
-                   <code>&lt;script src="/path/to/ghost.js"&gt;&lt;/script&gt;</code><br><br>
-                   Replace <code>/path/to/ghost.js</code> with the correct location (like <code>/static/ghost.js</code>).
+                   <strong>Edit your homepage</strong> and add the following line inside the <code>&lt;head&gt;</code> tag:<br /><br />
+                   <code>&lt;script src="/static/ghost.js"&gt;&lt;/script&gt;</code><br /><br />
+                   Replace <code>/static/ghost.js</code> with the actual path if different.
                </li>
                <li>
                    <strong>Save and upload your homepage</strong> if needed.
@@ -109,9 +169,9 @@
            </p>
        </div>
    </div>
+
    <footer>
        &copy; 2025 GhostWall. Built to protect creators and publishers.
    </footer>
-   <script src="{{ url_for('static', filename='ghost.js') }}"></script>
 </body>
 </html>
