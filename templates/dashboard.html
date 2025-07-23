@@ -8,6 +8,8 @@
         h1 { color: #3b82f6; }
         ul { margin-top: 2rem; padding-left: 1.5rem; }
         li { background: #1e293b; color: #cbd5e1; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; }
+        #clear-btn { padding: 0.5rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+        #clear-status { margin-top: 1rem; color: #38bdf8; }
     </style>
 </head>
 <body>
@@ -23,6 +25,8 @@
     <p style="color:#94a3b8;">
         All logs below come from the real-time API. Latest requests show up instantly.
     </p>
+    <button id="clear-btn">Clear Log</button>
+    <div id="clear-status"></div>
 
     <ul id="log-list">
         <li>Loading logs...</li>
@@ -30,6 +34,7 @@
 
     <script>
     const API_URL = "https://ghostwallapi.onrender.com/logs";
+    const CLEAR_URL = "https://ghostwallapi.onrender.com/clear_logs";
 
     function fetchLogs() {
         fetch(API_URL)
@@ -52,9 +57,22 @@
             });
     }
 
-    // Refresh logs every 10 seconds for live updates
+    // Refresh logs every 10 seconds
     fetchLogs();
     setInterval(fetchLogs, 10000);
+
+    // Clear log button logic
+    document.getElementById("clear-btn").onclick = function () {
+        fetch(CLEAR_URL, { method: "POST" })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("clear-status").textContent = data.message;
+                fetchLogs();
+            })
+            .catch(() => {
+                document.getElementById("clear-status").textContent = "Error clearing log.";
+            });
+    };
     </script>
 </body>
 </html>
