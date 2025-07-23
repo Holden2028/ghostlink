@@ -24,10 +24,37 @@
         All logs below come from the real-time API. Latest requests show up instantly.
     </p>
 
-    <ul>
-        {% for entry in logs %}
-            <li>{{ entry }}</li>
-        {% endfor %}
+    <ul id="log-list">
+        <li>Loading logs...</li>
     </ul>
+
+    <script>
+    const API_URL = "https://ghostwallapi.onrender.com/logs";
+
+    function fetchLogs() {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                const logList = document.getElementById("log-list");
+                logList.innerHTML = "";
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(entry => {
+                        const li = document.createElement("li");
+                        li.textContent = entry;
+                        logList.appendChild(li);
+                    });
+                } else {
+                    logList.innerHTML = "<li>No logs found.</li>";
+                }
+            })
+            .catch(err => {
+                document.getElementById("log-list").innerHTML = "<li style='color:#ef4444'>Error fetching logs.</li>";
+            });
+    }
+
+    // Refresh logs every 10 seconds for live updates
+    fetchLogs();
+    setInterval(fetchLogs, 10000);
+    </script>
 </body>
 </html>

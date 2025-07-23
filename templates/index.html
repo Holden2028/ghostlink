@@ -17,21 +17,17 @@
        ul li { color: #cbd5e1; line-height: 1.5; }
        footer { text-align: center; padding: 2rem 1rem; font-size: 0.9rem; color: #64748b; }
    </style>
-   <!-- GhostWall Detection Script -->
+   <!-- GhostWall API Detection Script -->
    <script>
    (function () {
-       fetch("https://ghostwall.onrender.com/detect", {
+       fetch("https://ghostwallapi.onrender.com/check", {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({
-               user_agent: navigator.userAgent,
-               url: window.location.href,
-               referrer: document.referrer,
-               timestamp: new Date().toISOString(),
-               api_key: "test123"  // Remove if not needed
+               api_key: "test123",
+               user_agent: navigator.userAgent
            })
-       })
-       .catch(() => {});
+       });
    })();
    </script>
 </head>
