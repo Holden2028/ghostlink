@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>GhostWall API Log Dashboard</title>
     <style>
         body {
@@ -10,7 +10,9 @@
             font-family: 'Segoe UI', sans-serif;
             padding: 2rem;
         }
-        h1 { color: #3b82f6; }
+        h1 {
+            color: #3b82f6;
+        }
         #clear-btn {
             padding: 0.5rem 1.5rem;
             background: #ef4444;
@@ -20,7 +22,10 @@
             font-size: 1rem;
             cursor: pointer;
         }
-        #clear-status { margin-top: 1rem; color: #38bdf8; }
+        #clear-status {
+            margin-top: 1rem;
+            color: #38bdf8;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -29,10 +34,16 @@
             border-radius: 10px;
             overflow: hidden;
         }
-        th, td {
+        th,
+        td {
             padding: 0.75rem 1rem;
             text-align: left;
-            border-bottom: 1px solid #fff; /* White border lines */
+            border-bottom: 1px solid #fff; /* White horizontal border */
+            border-right: 1px solid #fff; /* White vertical border */
+        }
+        th:last-child,
+        td:last-child {
+            border-right: none; /* Remove right border on last column */
         }
         th {
             background: #334155;
@@ -65,9 +76,20 @@
             border: none;
         }
         @media (max-width: 900px) {
-            table, thead, tbody, th, td, tr { display: block; }
-            thead tr { display: none; }
-            tr { margin-bottom: 1.5rem; }
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+            thead tr {
+                display: none;
+            }
+            tr {
+                margin-bottom: 1.5rem;
+            }
             td {
                 border: none;
                 padding: 0.7rem 0.7rem 0.7rem 40%;
@@ -80,12 +102,24 @@
                 white-space: nowrap;
                 font-weight: bold;
             }
-            td:nth-child(1):before { content: "Timestamp"; }
-            td:nth-child(2):before { content: "IP"; }
-            td:nth-child(3):before { content: "API Key"; }
-            td:nth-child(4):before { content: "User Agent"; }
-            td:nth-child(5):before { content: "Bot/Human"; }
-            td:nth-child(6):before { content: "Details"; }
+            td:nth-child(1):before {
+                content: "Timestamp";
+            }
+            td:nth-child(2):before {
+                content: "IP";
+            }
+            td:nth-child(3):before {
+                content: "API Key";
+            }
+            td:nth-child(4):before {
+                content: "User Agent";
+            }
+            td:nth-child(5):before {
+                content: "Bot/Human";
+            }
+            td:nth-child(6):before {
+                content: "Details";
+            }
         }
     </style>
 </head>
@@ -117,69 +151,79 @@
             </tr>
         </thead>
         <tbody id="log-body">
-            <tr><td colspan="6">Loading logs...</td></tr>
+            <tr>
+                <td colspan="6">Loading logs...</td>
+            </tr>
         </tbody>
     </table>
 
     <script>
-    const API_URL = "https://ghostwallapi.onrender.com/logs";
+        const API_URL = "https://ghostwallapi.onrender.com/logs";
 
-    function fetchLogs() {
-        fetch(API_URL)
-            .then(res => res.json())
-            .then(data => {
-                const logBody = document.getElementById("log-body");
-                logBody.innerHTML = "";
-                if (data.logs && data.logs.length > 0) {
-                    data.logs.slice().reverse().forEach(entry => {
-                        const {
-                            timestamp = "",
-                            ip = "",
-                            api_key = "",
-                            user_agent = "",
-                            visitor_type = "",
-                            details = ""
-                        } = entry;
+        function fetchLogs() {
+            fetch(API_URL)
+                .then((res) => res.json())
+                .then((data) => {
+                    const logBody = document.getElementById("log-body");
+                    logBody.innerHTML = "";
+                    if (data.logs && data.logs.length > 0) {
+                        data.logs
+                            .slice()
+                            .reverse()
+                            .forEach((entry) => {
+                                const {
+                                    timestamp = "",
+                                    ip = "",
+                                    api_key = "",
+                                    user_agent = "",
+                                    visitor_type = "",
+                                    details = "",
+                                } = entry;
 
-                        let isBot = (visitor_type === "bot" || visitor_type === "error");
-                        let status = isBot ? "Bot" : "Human";
-                        let rowClass = isBot ? "log-bot" : "log-human";
+                                let isBot =
+                                    visitor_type === "bot" || visitor_type === "error";
+                                let status = isBot ? "Bot" : "Human";
+                                let rowClass = isBot ? "log-bot" : "log-human";
 
-                        const tr = document.createElement("tr");
-                        tr.className = rowClass;
-                        tr.innerHTML = `
-                            <td>${timestamp}</td>
-                            <td>${ip}</td>
-                            <td>${api_key}</td>
-                            <td style="word-break:break-all">${user_agent}</td>
-                            <td>${status}</td>
-                            <td>${details}</td>
-                        `;
-                        logBody.appendChild(tr);
-                    });
-                } else {
-                    logBody.innerHTML = `<tr><td colspan="6">No logs found.</td></tr>`;
-                }
-            })
-            .catch(err => {
-                document.getElementById("log-body").innerHTML = `<tr><td colspan="6" style='color:#ef4444'>Error fetching logs.</td></tr>`;
-            });
-    }
+                                const tr = document.createElement("tr");
+                                tr.className = rowClass;
+                                tr.innerHTML = `
+                                    <td>${timestamp}</td>
+                                    <td>${ip}</td>
+                                    <td>${api_key}</td>
+                                    <td style="word-break:break-all">${user_agent}</td>
+                                    <td>${status}</td>
+                                    <td>${details}</td>
+                                `;
+                                logBody.appendChild(tr);
+                            });
+                    } else {
+                        logBody.innerHTML = `<tr><td colspan="6">No logs found.</td></tr>`;
+                    }
+                })
+                .catch((err) => {
+                    document.getElementById(
+                        "log-body"
+                    ).innerHTML = `<tr><td colspan="6" style='color:#ef4444'>Error fetching logs.</td></tr>`;
+                });
+        }
 
-    fetchLogs();
-    setInterval(fetchLogs, 10000);
+        fetchLogs();
+        setInterval(fetchLogs, 10000);
 
-    document.getElementById("clear-btn").onclick = function () {
-        fetch(API_URL, { method: "DELETE" })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("clear-status").textContent = data.message || "Log cleared.";
-                fetchLogs();
-            })
-            .catch(() => {
-                document.getElementById("clear-status").textContent = "Error clearing log.";
-            });
-    };
+        document.getElementById("clear-btn").onclick = function () {
+            fetch(API_URL, { method: "DELETE" })
+                .then((res) => res.json())
+                .then((data) => {
+                    document.getElementById("clear-status").textContent =
+                        data.message || "Log cleared.";
+                    fetchLogs();
+                })
+                .catch(() => {
+                    document.getElementById("clear-status").textContent =
+                        "Error clearing log.";
+                });
+        };
     </script>
 </body>
 </html>
