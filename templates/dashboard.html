@@ -4,17 +4,93 @@
     <meta charset="UTF-8">
     <title>GhostWall API Log Dashboard</title>
     <style>
-        body { background-color: #0f1115; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; padding: 2rem;}
+        body {
+            background-color: #0f1115;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 2rem;
+        }
         h1 { color: #3b82f6; }
-        ul { margin-top: 2rem; padding-left: 1.5rem; }
-        li { background: #1e293b; color: #cbd5e1; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; }
-        #clear-btn { padding: 0.5rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+        #clear-btn {
+            padding: 0.5rem 1.5rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
         #clear-status { margin-top: 1rem; color: #38bdf8; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            background: #334155;
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .log-bot {
+            background-color: #3f1d1d !important;
+            color: #ff8181;
+        }
+        .log-human {
+            background-color: #1d3f26 !important;
+            color: #80ffad;
+        }
+        nav {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+        }
+        select {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            background: #1e293b;
+            color: #f1f5f9;
+            border: none;
+        }
+        @media (max-width: 800px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { display: none; }
+            tr { margin-bottom: 1.5rem; }
+            td {
+                border: none;
+                padding: 0.7rem 0.7rem 0.7rem 40%;
+                position: relative;
+            }
+            td:before {
+                position: absolute;
+                left: 1rem;
+                width: 35%;
+                white-space: nowrap;
+                font-weight: bold;
+            }
+            td:nth-child(1):before { content: "Timestamp"; }
+            td:nth-child(2):before { content: "IP"; }
+            td:nth-child(3):before { content: "User Agent"; }
+            td:nth-child(4):before { content: "Bot/Human"; }
+            td:nth-child(5):before { content: "Details"; }
+        }
     </style>
 </head>
 <body>
-    <nav style="position: absolute; top: 1rem; left: 1rem;">
-        <select onchange="location = this.value;" style="padding: 0.5rem; font-size: 1rem;">
+    <nav>
+        <select onchange="location = this.value;">
             <option selected disabled>Menu</option>
             <option value="/">Home</option>
             <option value="/dashboard">Dashboard</option>
@@ -28,9 +104,20 @@
     <button id="clear-btn">Clear Log</button>
     <div id="clear-status"></div>
 
-    <ul id="log-list">
-        <li>Loading logs...</li>
-    </ul>
+    <table id="log-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>IP</th>
+                <th>User Agent</th>
+                <th>Bot/Human</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody id="log-body">
+            <tr><td colspan="5">Loading logs...</td></tr>
+        </tbody>
+    </table>
 
     <script>
     const API_URL = "https://ghostwallapi.onrender.com/logs";
@@ -39,28 +126,53 @@
         fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                const logList = document.getElementById("log-list");
-                logList.innerHTML = "";
+                const logBody = document.getElementById("log-body");
+                logBody.innerHTML = "";
                 if (data.logs && data.logs.length > 0) {
-                    data.logs.forEach(entry => {
-                        const li = document.createElement("li");
-                        li.textContent = entry;
-                        logList.appendChild(li);
+                    // Reverse so newest on top
+                    data.logs.slice().reverse().forEach(entry => {
+                        // Adjust keys if your backend differs
+                        const {
+                            timestamp = "",
+                            ip = "",
+                            user_agent = "",
+                            is_bot = "",
+                            details = ""
+                        } = entry;
+
+                        let status = "";
+                        let rowClass = "";
+                        if (is_bot === true || is_bot === "bot" || is_bot === 1) {
+                            status = "Bot";
+                            rowClass = "log-bot";
+                        } else {
+                            status = "Human";
+                            rowClass = "log-human";
+                        }
+
+                        const tr = document.createElement("tr");
+                        tr.className = rowClass;
+                        tr.innerHTML = `
+                            <td>${timestamp}</td>
+                            <td>${ip}</td>
+                            <td style="word-break:break-all">${user_agent}</td>
+                            <td>${status}</td>
+                            <td>${details}</td>
+                        `;
+                        logBody.appendChild(tr);
                     });
                 } else {
-                    logList.innerHTML = "<li>No logs found.</li>";
+                    logBody.innerHTML = `<tr><td colspan="5">No logs found.</td></tr>`;
                 }
             })
             .catch(err => {
-                document.getElementById("log-list").innerHTML = "<li style='color:#ef4444'>Error fetching logs.</li>";
+                document.getElementById("log-body").innerHTML = `<tr><td colspan="5" style='color:#ef4444'>Error fetching logs.</td></tr>`;
             });
     }
 
-    // Refresh logs every 10 seconds
     fetchLogs();
     setInterval(fetchLogs, 10000);
 
-    // Clear log button logic
     document.getElementById("clear-btn").onclick = function () {
         fetch(API_URL, { method: "DELETE" })
             .then(res => res.json())
